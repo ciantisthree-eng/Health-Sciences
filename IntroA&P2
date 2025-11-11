@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Study Quiz: Metabolism & Microbiology</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the nature theme and font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Nature theme: Gradient from a sunny sky (yellow/light green) to green grass */
+            background: linear-gradient(to bottom right, #FFC107 0%, #8BC34A 50%, #4CAF50 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .quiz-card {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 900px;
+            width: 100%;
+            transition: transform 0.3s ease-out;
+            border: 4px solid #4CAF50; /* Green border for accent */
+        }
+        
+        .answer-choice {
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            border: 2px solid #D1D5DB;
+        }
+
+        .answer-choice:not(.correct):not(.incorrect):hover {
+            transform: scale(1.01);
+            background-color: #F0FDF4; /* Light green hover effect */
+            border-color: #8BC34A;
+        }
+
+        .correct {
+            background-color: #8BC34A !important; /* Green */
+            color: white !important;
+            border-color: #4CAF50 !important;
+            pointer-events: none; /* Disable further clicks */
+        }
+
+        .incorrect {
+            background-color: #F44336 !important; /* Red */
+            color: white !important;
+            border-color: #D32F2F !important;
+            pointer-events: none; /* Disable further clicks */
+        }
+
+        .start-button {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            background-color: #4CAF50;
+        }
+
+        .start-button:hover {
+            background-color: #388E3C;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .quiz-card {
+                padding: 1rem;
+                border-radius: 1rem;
+            }
+            .text-3xl { font-size: 1.75rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="quiz-card" id="quizContainer">
+        
+        <!-- Splash Screen (Start Quiz) -->
+        <div id="startScreen" class="text-center">
+            <h1 class="text-4xl font-extrabold text-gray-800 mb-4">Academic Study Quiz</h1>
+            <h2 class="text-xl text-gray-600 mb-8">100 Multiple-Choice Questions on Cell Metabolism & Microbiology</h2>
+            <p class="text-gray-700 mb-8">This quiz will provide instant feedback on your answers. Click 'Start Quiz' when you're ready to begin!</p>
+            <button id="startButton" class="start-button text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300">
+                Start Quiz (100 Questions)
+            </button>
+        </div>
+
+        <!-- Quiz Content -->
+        <div id="quizContent" class="hidden">
+            <div class="flex justify-between items-center mb-6 border-b pb-4">
+                <h2 id="questionCount" class="text-xl font-bold text-gray-700">Question 1/100</h2>
+                <div id="currentScore" class="text-xl font-bold text-gray-700">Score: 0</div>
+            </div>
+
+            <h3 id="questionText" class="text-2xl font-semibold text-gray-900 mb-8"></h3>
+            
+            <div id="answersContainer" class="space-y-4">
+                <!-- Answer buttons will be injected here -->
+            </div>
+            
+            <div id="feedback" class="mt-6 text-lg font-bold min-h-[3rem]">
+                <!-- Feedback message will appear here -->
+            </div>
+
+            <button id="nextButton" class="start-button text-white font-bold py-2 px-6 rounded-full mt-6 float-right opacity-50 cursor-not-allowed" disabled>
+                Next Question &raquo;
+            </button>
+        </div>
+
+        <!-- Score Screen -->
+        <div id="scoreScreen" class="hidden text-center">
+            <h1 class="text-4xl font-extrabold text-gray-800 mb-4">Quiz Complete! 🎉</h1>
+            <p class="text-xl text-gray-700 mb-8">You finished all 100 questions. Here is your result:</p>
+            <div class="inline-block bg-green-100 p-6 rounded-2xl shadow-inner mb-8">
+                <p class="text-5xl font-extrabold text-green-700" id="finalScore"></p>
+                <p class="text-2xl text-green-600 mt-2">Correct Answers</p>
+            </div>
+            <button onclick="window.location.reload()" class="start-button text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300">
+                Review & Retake Quiz
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- QUIZ DATA: 100 QUESTIONS GENERATED FROM SLIDE CONTENT ---
+        const questions = [
+            // Slide: Cell Metabolism (Chapter 1, Slides 33-35)
+            { q: "The general term for all chemical reactions necessary for the use of raw material in the human body is:", a: ["Anabolism", "Catabolism", "Metabolism", "Glycolysis"], c: "Metabolism" },
+            { q: "Reactions that break down larger, more complex substances into simpler substances are known as:", a: ["Anabolism", "Catabolism", "Protein Synthesis", "Gluconeogenesis"], c: "Catabolism" },
+            { q: "Reactions that build up complex substances from simpler substances are known as:", a: ["Anabolism", "Catabolism", "Aerobic", "TCA Cycle"], c: "Anabolism" },
+            { q: "In the analogy where the body is a factory, which process is illustrated by amino acids linking to form a protein (like building a brick wall)?", a: ["Catabolism", "Glycolysis", "Anabolism", "Hydrolysis"], c: "Anabolism" },
+            { q: "Energy is often supplied by mitochondria to produce which type of reaction?", a: ["Anabolism", "Catabolism", "Hydrolysis", "Fermentation"], c: "Catabolism" },
+            // Slide: Carbohydrates (Slides 36-38)
+            { q: "What are the raw materials (fuel) that arrive at the 'factory' in the metabolism analogy?", a: ["Amino Acids", "VLDL", "Disaccharides", "Monosaccharides"], c: "Monosaccharides" },
+            { q: "Which class of carbohydrates consists of only single-sugar compounds?", a: ["Polysaccharides", "Disaccharides", "Triglycerides", "Monosaccharides"], c: "Monosaccharides" },
+            { q: "Which disaccharide is composed of two glucose molecules?", a: ["Lactose", "Sucrose", "Maltose", "Ribose"], c: "Maltose" },
+            { q: "Lactose, a disaccharide, splits into which two monosaccharides?", a: ["Glucose and Fructose", "Glucose and Glucose", "Glucose and Galactose", "Fructose and Galactose"], c: "Glucose and Galactose" },
+            { q: "Glycogen and starch are examples of which class of carbohydrates?", a: ["Monosaccharides", "Disaccharides", "Polysaccharides", "Lipids"], c: "Polysaccharides" },
+            { q: "Polysaccharides are mainly stored in which form in the liver and skeletal muscle of humans?", a: ["Starch", "Fructose", "Glycogen", "Cellulose"], c: "Glycogen" },
+            { q: "Which sugar is an important component of DNA?", a: ["Glucose", "Galactose", "Ribose", "Fructose"], c: "Ribose" },
+            { q: "The primary role of glucose is to be:", a: ["Stored as fat", "Burned immediately for fuel", "Converted to protein", "Used for DNA synthesis"], c: "Burned immediately for fuel" },
+            // Slide: Glucose Breakdown (Slides 39-42)
+            { q: "The initial step of breaking down glucose into lactic acid, occurring when oxygen is absent, is called:", a: ["Aerobic catabolism", "Gluconeogenesis", "Glycolysis", "Ketogenesis"], c: "Glycolysis" },
+            { q: "Aerobic catabolism requires the presence of:", a: ["Lactic acid", "Glucose only", "Oxygen", "Triglycerides"], c: "Oxygen" },
+            { q: "What is the key output of aerobic catabolism of glucose, besides carbon dioxide and water?", a: ["Lactic Acid", "ATP", "Fructose", "Urea"], c: "ATP" },
+            { q: "The process of making glucose from non-carbohydrate substances (like proteins/fats) is called:", a: ["Catabolism", "Anabolism", "Gluconeogenesis", "Glycolysis"], c: "Gluconeogenesis" },
+            { q: "The body's mechanism for using stored glycogen and fat to ensure a constant supply of fuel is known as:", a: ["Homeostasis", "Gluconeogenesis", "Protein synthesis", "Anaerobic catabolism"], c: "Gluconeogenesis" },
+            // Slide: Lipids (Fats) (Slides 43-46)
+            { q: "Which organic compounds are commonly called fats, waxes, and oils?", a: ["Carbohydrates", "Proteins", "Lipids", "Nucleotides"], c: "Lipids" },
+            { q: "The most common form of lipids is:", a: ["Steroids", "Phospholipids", "Triglycerides", "VLDL"], c: "Triglycerides" },
+            { q: "What is a major use of lipids in the body?", a: ["Synthesis of proteins", "Source of energy", "Regulating blood sugar", "Carrying oxygen"], c: "Source of energy" },
+            { q: "Lipids are a component of cell membranes and the myelin sheath because they are:", a: ["Water soluble", "Good insulators", "Quickly burned for fuel", "Antioxidants"], c: "Good insulators" },
+            { q: "Which lipoprotein is considered 'Good Cholesterol' because it carries cholesterol from tissues back to the liver for excretion?", a: ["VLDL", "LDL", "HDL", "Triglycerides"], c: "HDL" },
+            { q: "Which lipoprotein is considered 'Bad Cholesterol' because it delivers cholesterol to non-hepatic tissue?", a: ["VLDL", "LDL", "HDL", "Phospholipids"], c: "LDL" },
+            { q: "VLDL is primarily responsible for transporting which substance to adipose tissue and muscle?", a: ["Cholesterol", "Triglycerides", "Amino Acids", "Glucose"], c: "Triglycerides" },
+            // Slide: Proteins and Amino Acids (Slides 47-50)
+            { q: "Which organic matter is the most abundant in the body?", a: ["Carbohydrates", "Lipids", "Proteins", "Nucleotides"], c: "Proteins" },
+            { q: "Proteins that function as catalysts, speeding up chemical reactions, are called:", a: ["Hormones", "Antibodies", "Enzymes", "Plasma Proteins"], c: "Enzymes" },
+            { q: "Which protein is responsible for carrying oxygen in the blood?", a: ["Antibody", "Plasma protein", "Hemoglobin", "Enzyme"], c: "Hemoglobin" },
+            { q: "What are the building blocks of protein?", a: ["Fatty acids", "Amino acids", "Monosaccharides", "Nucleotides"], c: "Amino acids" },
+            { q: "Amino acids are joined together by which type of bond to build peptides and proteins?", a: ["Hydrogen bonds", "Ionic bonds", "Peptide bonds", "Disulfide bonds"], c: "Peptide bonds" },
+            { q: "Amino acids that the body can synthesize are classified as:", a: ["Essential", "Nonessential", "Conditional", "Structural"], c: "Nonessential" },
+            { q: "If needed, proteins can be broken down to serve as a source of energy for the production of:", a: ["Fatty Acids", "Nucleotides", "ATP", "VLDL"], c: "ATP" },
+            // Slide: Nucleotides and Nucleic Acids (Slides 51-54)
+            { q: "A nucleotide is composed of a nitrogenous base, a phosphate group, and a:", a: ["Triglyceride", "Amino Acid", "Simple sugar", "Glycerol"], c: "Simple sugar" },
+            { q: "Adenine, Guanine, Cytosine, and Thymine are all examples of:", a: ["Amino Acids", "Sugars", "Nitrogenous Bases", "Phosphate groups"], c: "Nitrogenous Bases" },
+            { q: "DNA is a double-stranded molecule shaped like a:", a: ["Spiral staircase", "Triple helix", "Single chain", "Ring structure"], c: "Spiral staircase" },
+            { q: "Which nitrogenous base pairs with Guanine in DNA?", a: ["Adenine", "Thymine", "Uracil", "Cytosine"], c: "Cytosine" },
+            { q: "Which nitrogenous base pairs with Adenine in DNA?", a: ["Guanine", "Cytosine", "Thymine", "Uracil"], c: "Thymine" },
+            { q: "The genetic code is organized as an order of how many bases coding for one amino acid?", a: ["One", "Two", "Three", "Four"], c: "Three" },
+            { q: "Urea is the waste product of nitrogen elimination from excess:", a: ["Carbohydrates", "Lipids", "Amino Acids", "Phosphate"], c: "Amino Acids" },
+            // Slide: Protein Synthesis (Slides 55-58)
+            { q: "The process where DNA's base sequence is copied onto an mRNA strand is called:", a: ["Translation", "Replication", "Transcription", "Polymerization"], c: "Transcription" },
+            { q: "Which type of RNA detaches from the nucleus and goes to the ribosomes in the cytoplasm?", a: ["tRNA", "rRNA", "mRNA", "sRNA"], c: "mRNA" },
+            { q: "The process where tRNA reads the mRNA code to align amino acids into a protein chain is called:", a: ["Transcription", "Translation", "Replication", "Denaturation"], c: "Translation" },
+            { q: "Protein synthesis terminates when:", a: ["The cell runs out of ATP", "tRNA cannot find the next amino acid", "The DNA strand is copied completely", "All amino acids are assembled in sequence"], c: "All amino acids are assembled in sequence" },
+            { q: "Where does the tRNA connect to a single amino acid in the cytoplasm?", a: ["Nucleus", "Ribosome", "Endoplasmic Reticulum", "Mitochondria"], c: "Cytoplasm" },
+            { q: "Which molecule contains the base-pairs that match up with mRNA during translation?", a: ["tRNA", "DNA", "rRNA", "VLDL"], c: "tRNA" },
+            // Slide: Microbiology Basics (Chapter 5, Slides 1-3)
+            { q: "What is defined as the failure of the body to function normally, caused by a pathogen?", a: ["Infection", "Contamination", "Disease", "Colonization"], c: "Disease" },
+            { q: "Invasion of the body by a pathogen is termed as:", a: ["Disease", "Infection", "Sepsis", "Nosocomial"], c: "Infection" },
+            { q: "An infection that is restricted to a small area is categorized as:", a: ["Systemic", "Widespread", "Localized", "Disseminated"], c: "Localized" },
+            { q: "An infection that is widespread, usually spread throughout the body through the bloodstream, is categorized as:", a: ["Localized", "Systemic", "Contained", "Topical"], c: "Systemic" },
+            // Slide: Types of Pathogens (Slide 4-7)
+            { q: "Which type of pathogen consists only of DNA or RNA within a protein shell and reproduces only within a host cell?", a: ["Bacteria", "Fungi", "Protozoa", "Viruses"], c: "Viruses" },
+            { q: "The organisms that cause amoebas, ciliates, flagellates, and sporozoans are classified as:", a: ["Bacteria", "Viruses", "Protozoa", "Worms"], c: "Protozoa" },
+            { q: "Microorganisms that are able to form spores and have a cell wall are typically classified as:", a: ["Viruses", "Protozoa", "Bacteria", "Arthropods"], c: "Bacteria" },
+            { q: "Multicellular organisms that are either round or flat and are categorized as parasites are:", a: ["Arthropods", "Worms", "Fungi", "Bacteria"], c: "Worms" },
+            { q: "Scabies mites and ticks are classified under which type of pathogen?", a: ["Worms", "Fungi", "Arthropods", "Protozoa"], c: "Arthropods" },
+            { q: "Fungi can cause infections of the hair, skin, nails, and mucous membranes, known as:", a: ["Septicemia", "Systemic infection", "Mycolic infections", "Bacteremia"], c: "Mycolic infections" },
+            // Slide: Laboratory Identification (Slide 8)
+            { q: "The staining method that colors Gram-positive bacteria blue or purple and Gram-negative bacteria red or pink is called:", a: ["Acid-fast stain", "Spore stain", "Gram stain", "Aureus stain"], c: "Gram stain" },
+            { q: "The process of collecting a pathogen sample and allowing it to multiply in a liquid or semisolid medium is referred to as:", a: ["Staining", "Serology", "Culture", "Inoculation"], c: "Culture" },
+            // Slide: Spread of Infection (Slides 9-11)
+            { q: "Which of the following is NOT listed as a 'Portal of Entry' for microorganisms?", a: ["Gastrointestinal tract", "Respiratory tract", "Joints", "Eyes"], c: "Joints" },
+            { q: "Which of the following is listed as a 'Portal of Exit' for microorganisms?", a: ["Skin", "Breasts", "Eyes", "Genitourinary tract"], c: "Genitourinary tract" },
+            { q: "Transmission of infection through contaminated water, food, or objects is an example of which mode of transmission?", a: ["Person-to-person", "Vector", "Environment-to-person", "Zoonosis"], c: "Environment-to-person" },
+            { q: "Diseases communicated from animals to humans are referred to as:", a: ["Communicable", "Infectious", "Contagious", "Zoonosis"], c: "Zoonosis" },
+            { q: "What is a difference between a communicable disease and a contagious disease?", a: ["Communicable is always systemic.", "Contagious is spread person-to-person, communicable is broader.", "They are the same.", "Contagious is only vector-borne."], c: "Contagious is spread person-to-person, communicable is broader." },
+            // Slide: Dr. Semmelweis and Nosocomial Infection (Slide 12)
+            { q: "The story of Dr. Semmelweis emphasizes the importance of hand-washing to prevent what type of infection?", a: ["Systemic infection", "Vector-borne infection", "Nosocomial infection", "Localized infection"], c: "Nosocomial infection" },
+            { q: "A contemporary example of a drug-resistant organism that presents a parallel to Semmelweis's findings about nosocomial infection is:", a: ["VLDL", "Streptococcus", "MRSA", "Treponema pallidum"], c: "MRSA" },
+            // Slide: Typhoid Mary (Slide 15)
+            { q: "Mary Mallon (Typhoid Mary) was an asymptomatic carrier of the typhoid pathogen, primarily shedding the bacteria from her:", a: ["Kidneys", "Gallbladder", "Lungs", "Skin"], c: "Gallbladder" },
+            { q: "The historical account of Typhoid Mary primarily illustrates the concepts of carriers and:", a: ["Portals of Entry", "Modes of Transmission", "Reservoirs of Infection", "Contagious Disease"], c: "Reservoirs of Infection" },
+            // Slide: Flora and Superinfection (Slide 13)
+            { q: "Microorganisms that normally inhabit the body without causing disease are referred to as:", a: ["Pathogens", "Normal flora", "Vectors", "Reservoirs"], c: "Normal flora" },
+            { q: "The case of Flora's story discussed the role of antibiotics in creating an imbalance that can lead to:", a: ["Zoonosis", "Superinfection", "Anabolism", "Transcription"], c: "Superinfection" },
+            // Slide: A Pox News Alert (Slide 16)
+            { q: "Syphilis is caused by a spirochete known as Treponema pallidum. Based on this, Syphilis is classified as a:", a: ["Virus", "Protozoa", "Bacteria", "Fungi"], c: "Bacteria" },
+            { q: "Vibrio-cholera and smallpox are provided as examples of contemporary medical focus on the type of pathogen that causes:", a: ["Worms", "Pox", "Arthropods", "Normal flora"], c: "Pox" },
+            // --- Additional Questions to reach 100 (Deep dive on slide content) ---
+            { q: "Oils are liquid at room temperature and are primarily composed of unsaturated fatty acids, while fats are solid at room temperature and are primarily composed of:", a: ["Amino acids", "Saturated fatty acids", "Vitamins", "Monosaccharides"], c: "Saturated fatty acids" },
+            { q: "The use of lipids to form steroids is essential for the synthesis of which group of molecules?", a: ["Enzymes", "Hormones", "Antibodies", "Hemoglobin"], c: "Hormones" },
+            { q: "Amino acids line up in the proper sequence along the ribosome during which phase of protein synthesis?", a: ["Transcription", "Catabolism", "Translation", "Replication"], c: "Translation" },
+            { q: "Disaccharides are formed when two monosaccharides are linked together and must be broken down by which process before they can be absorbed?", a: ["Condensation", "Synthesis", "Hydrolysis", "Polymerization"], c: "Hydrolysis" },
+            { q: "Sucrose splits into which two monosaccharides?", a: ["Glucose and Glucose", "Glucose and Fructose", "Glucose and Galactose", "Fructose and Fructose"], c: "Glucose and Fructose" },
+            { q: "Plant starch is a major source of polysaccharides found in the diet. It is an important source of:", a: ["Protein", "Fiber", "Energy", "Lipids"], c: "Energy" },
+            { q: "Insulin helps to regulate blood sugar, while glycogen acts as:", a: ["A structural protein", "A digestive enzyme", "A storage fuel in muscle", "A nucleic acid"], c: "A storage fuel in muscle" },
+            { q: "Hyperglycemia (elevated blood sugar levels) affects the body's ability to:", a: ["Synthesize protein", "Metabolize glucose efficiently", "Store fat as energy", "Perform transcription"], c: "Metabolize glucose efficiently" },
+            { q: "The failure of the body to function normally is the definition of:", a: ["Infection", "Disease", "Contagion", "Zoonosis"], c: "Disease" },
+            { q: "VLDL stands for:", a: ["Very low-density lipoprotein", "Vascular lipid degradation", "Viral load differential", "Very large dietary lipid"], c: "Very low-density lipoprotein" },
+            { q: "A characteristic of bacteria is that they often occur in round, ball-shaped clusters or chains, known as:", a: ["Cocci", "Bacilli", "Spirochetes", "Vibrios"], c: "Cocci" },
+            { q: "Viruses are described as obligate intracellular parasites because they depend on the host organism for:", a: ["Protection", "Locomotion", "Reproduction", "Energy"], c: "Reproduction" },
+            { q: "Which portal of entry is most common for microorganisms to enter the body?", a: ["Eyes", "Skin", "Respiratory tract", "Genitourinary tract"], c: "Respiratory tract" },
+            { q: "In the context of the spread of infection, 'Tiny animals-to-person' refers to transmission by:", a: ["Fungi", "Worms", "Protozoa", "Arthropods"], c: "Arthropods" },
+            { q: "The two main components of a nucleoside are:", a: ["Base and phosphate", "Base and sugar", "Sugar and phosphate", "Base and amino acid"], c: "Base and sugar" },
+            { q: "Which type of nucleic acid uses Uracil instead of Thymine?", a: ["DNA", "rRNA", "tRNA", "All RNA types"], c: "All RNA types" },
+            { q: "Hormones, enzymes, and antibodies are primarily composed of:", a: ["Carbohydrates", "Fats", "Proteins", "Nucleic Acids"], c: "Proteins" },
+            { q: "Plasma proteins are key for regulating which bodily function?", a: ["Cell metabolism", "Blood pressure and volume", "Bone density", "Genetic transcription"], c: "Blood pressure and volume" },
+            { q: "If the body needs more energy, what can proteins be broken down into before being converted to glucose (gluconeogenesis)?", a: ["Fatty acids", "Amino acids", "Triglycerides", "Monosaccharides"], c: "Amino acids" },
+            { q: "Protein chain termination occurs when a ribosome encounters a:", a: ["Start codon", "T-base pair", "Stop codon", "Peptide bond"], c: "Stop codon" }, // (Implied by slide 57: 'protein chain terminates when all amino acids are assembled')
+            { q: "A major function of phospholipids in the body is to be a component of:", a: ["The cell nucleus", "The myelin sheath", "Hemoglobin", "The plasma of blood"], c: "The myelin sheath" },
+            { q: "Lipids are characterized by being solid or liquid at room temperature and are considered:", a: ["Water-soluble", "Organic compounds", "Inorganic compounds", "Non-essential"], c: "Organic compounds" },
+            { q: "Which class of protein is responsible for muscle movement and contraction?", a: ["Hormones", "Structural proteins", "Contractile muscle proteins", "Antibodies"], c: "Contractile muscle proteins" },
+            { q: "The initial authentication and delivery of a pathogen to a new host is best described by the term:", a: ["Infection", "Contagious", "Communicable", "Epidemic"], c: "Communicable" },
+            { q: "The ability of a bacterium to form spores primarily serves the purpose of:", a: ["Reproduction", "Defense against harsh environments", "Locomotion", "Protein synthesis"], c: "Defense against harsh environments" },
+            { q: "Which type of pathogen causes malaria, resulting in over 3 million deaths a year?", a: ["Virus", "Bacteria", "Fungi", "Protozoa"], c: "Protozoa" },
+            { q: "The main purpose of the Gram Stain is to differentiate bacteria based on their:", a: ["Metabolism type", "Cell wall structure", "Locomotion method", "Spore-forming ability"], c: "Cell wall structure" },
+            { q: "What is the specific name for round, ball-shaped bacteria?", a: ["Bacilli", "Spirochetes", "Vibrios", "Cocci"], c: "Cocci" },
+            { q: "The process of copying the genetic information from DNA to create an mRNA molecule is known as:", a: ["Replication", "Translation", "Transcription", "Polymerization"], c: "Transcription" },
+            { q: "Steroids, a relative of lipids, are primarily synthesized from:", a: ["Glucose", "Cholesterol", "Amino acids", "Triglycerides"], c: "Cholesterol" },
+            { q: "A characteristic of fungi is that they act as:", a: ["Obligate intracellular parasites", "Animal vectors", "Mycolic infections", "Microbe-like organisms"], c: "Microbe-like organisms" },
+            { q: "Which portal of exit is relevant for microorganisms leaving the body through sweat and oil glands?", a: ["Respiratory tract", "Skin", "Gastrointestinal tract", "Genitourinary tract"], c: "Skin" },
+            { q: "A key feature of DNA that makes it a double-stranded molecule is its structure as a:", a: ["Single helix", "Nucleotide ladder", "Peptide chain", "Monomer"], c: "Nucleotide ladder" },
+            { q: "If a patient is prescribed an antibiotic that disrupts the normal flora, what risk is increased?", a: ["Zoonosis", "Anaerobic catabolism", "Superinfection", "Transcription error"], c: "Superinfection" },
+            { q: "Ribose, Fructose, and Glucose are all examples of:", a: ["Disaccharides", "Monosaccharides", "Polysaccharides", "Nucleotides"], c: "Monosaccharides" },
+            { q: "Amino acids are correctly aligned to form peptides and proteins during the process of:", a: ["Transcription", "Translation", "Base pairing", "Gluconeogenesis"], c: "Translation" },
+            { q: "Which monosaccharide, found in the diet, is commonly known as 'fruit sugar'?", a: ["Glucose", "Galactose", "Ribose", "Fructose"], c: "Fructose" },
+            { q: "The core lipid that Low-Density Lipoprotein (LDL) delivers to nonhepatic tissue is:", a: ["Triglycerides", "Cholesterol", "Glycerol", "Fatty Acids"], c: "Cholesterol" },
+            { q: "The synthesis of protein is crucial for the body, as proteins are used to form which component of cell structure?", a: ["Mitochondria", "Cell membranes", "DNA", "Starch granules"], c: "Cell membranes" },
+            { q: "When energy is provided to the cells, it is broken down through catabolism primarily by which organelle?", a: ["Ribosome", "Nucleus", "Mitochondria", "Cytoplasm"], c: "Mitochondria" },
+            { q: "What is the primary function of Structural Proteins?", a: ["Defense", "Catalysis", "Transport", "Building tissues like tendons"], c: "Building tissues like tendons" },
+            { q: "In the genetic code, the 'codon' is a sequence of three bases that codes for one:", a: ["DNA strand", "Amino acid", "Protein", "Nucleotide"], c: "Amino acid" },
+            { q: "Which characteristic is unique to bacteria when compared to viruses, protozoa, and fungi?", a: ["Able to form cell wall", "Reproduces only within a host", "Is a single-celled organism", "Causes systemic infection"], c: "Able to form cell wall" },
+            { q: "Maltose is a disaccharide that splits into which two monosaccharides?", a: ["Glucose and Galactose", "Glucose and Fructose", "Two Glucose molecules", "Two Fructose molecules"], c: "Two Glucose molecules" },
+            { q: "The 'Rings of the DNA ladder' are formed by:", a: ["Phosphate groups", "Sugar-phosphate backbone", "Base pairing", "Peptide bonds"], c: "Base pairing" },
+            { q: "Ribosomes are the site where the mRNA leaves the nucleus and binds to begin:", a: ["Transcription", "Catabolism", "Anabolism", "Translation"], c: "Translation" },
+            { q: "Which class of pathogens include 'animal vectors' that carry diseases?", a: ["Worms", "Protozoa", "Arthropods", "Fungi"], c: "Arthropods" },
+            { q: "When amino acids are lined up in proper sequence along the ribosome, what type of bonds form to create a protein chain?", a: ["Hydrogen bonds", "Ionic bonds", "Disulfide bonds", "Peptide bonds"], c: "Peptide bonds" },
+            { q: "Which type of protein is a component of plasma and muscle?", a: ["Enzymes", "Hemoglobin", "Structural proteins", "Plasma proteins"], c: "Plasma proteins" },
+            { q: "Cholesterol is described as the core lipid for:", a: ["LDL and HDL", "VLDL and HDL", "LDL and VLDL", "Triglycerides"], c: "LDL and HDL" },
+            { q: "Which nitrogenous base is only found in RNA?", a: ["Thymine", "Adenine", "Guanine", "Uracil"], c: "Uracil" },
+            { q: "The main function of VLDL is to transport which substance?", a: ["Cholesterol", "Triglycerides", "Amino Acids", "Glucose"], c: "Triglycerides" },
+            { q: "The energy stored in muscle and liver for later use is called:", a: ["Glucose", "Starch", "Glycogen", "Lactic Acid"], c: "Glycogen" },
+            { q: "Synthesis of steroids is an important function of which organic compound class?", a: ["Carbohydrates", "Proteins", "Lipids", "Nucleic Acids"], c: "Lipids" },
+            { q: "The genetic information for protein synthesis is stored on a:", a: ["Codon", "Single strand", "Double strand", "Ribosome"], c: "Double strand" },
+            { q: "A characteristic of proteins is that they participate in every body function, including acting as:", a: ["Energy source", "Hormones", "Cell fuel", "Structural backbone of DNA"], c: "Hormones" },
+            { q: "If the height of the DNA ladder is formed by sugar and phosphate, what forms the 'rungs'?", a: ["Lipid chains", "Amino acids", "Base pairing", "Peptide bonds"], c: "Base pairing" },
+            { q: "Which is a common vector for spreading communicable diseases?", a: ["Fungi", "Arthropods", "Bacteria", "Monosaccharides"], c: "Arthropods" },
+            { q: "Microorganisms are typically introduced into a culture medium for:", a: ["Staining", "Identification and growth", "Gram-negative testing", "Antibiotic absorption"], c: "Identification and growth" },
+            { q: "The difference between Gram-positive (blue/purple) and Gram-negative (red/pink) bacteria is primarily due to differences in:", a: ["Nucleic acid content", "Cell membrane structure", "Cell wall thickness", "Spore presence"], c: "Cell wall thickness" },
+            { q: "The story 'Rick, Nick, and the Sick Tick' highlights the spread of disease through an animal vector, which is a type of:", a: ["Zoonosis", "Superinfection", "Nosocomial infection", "Anaerobic disease"], c: "Zoonosis" },
+            { q: "Vesicular-zoster (chickenpox/shingles) is caused by which type of pathogen?", a: ["Bacteria", "Virus", "Fungi", "Protozoa"], c: "Virus" },
+            { q: "Which portal of exit is most relevant for a pathogen leaving the body via urine or feces?", a: ["Respiratory tract", "Gastrointestinal tract", "Eyes", "Skin"], c: "Gastrointestinal tract" },
+            { q: "The primary purpose of a nucleus in a cell is to store:", a: ["Amino acids", "Lipids", "Glucose", "Genetic material (DNA)"], c: "Genetic material (DNA)" },
+            { q: "A key difference between Oils and Fats is that oils are liquid at room temperature and primarily composed of:", a: ["Saturated fatty acids", "Amino acids", "Unsaturated fatty acids", "Phospholipids"], c: "Unsaturated fatty acids" },
+            { q: "The two monosaccharides formed from the splitting of Lactose are Glucose and:", a: ["Maltose", "Fructose", "Galactose", "Ribose"], c: "Galactose" },
+            { q: "Which substance can be converted to glucose through gluconeogenesis, but is primarily a waste product?", a: ["Urea", "Lactic Acid", "Glycogen", "Ribose"], c: "Lactic Acid" },
+            { q: "The core role of antibodies (a type of protein) is:", a: ["Carrying oxygen", "Causing muscle contraction", "Fighting disease/infection", "Regulating blood sugar"], c: "Fighting disease/infection" },
+            { q: "A non-essential amino acid is one that:", a: ["Must be included in the diet", "The body can synthesize", "Is only used for energy", "Cannot form peptide bonds"], c: "The body can synthesize" },
+            { q: "The mRNA detaches from the nucleus during the process of:", a: ["Replication", "Translation", "Transcription", "Catabolism"], c: "Transcription" },
+            { q: "The nitrogenous bases in DNA/RNA are purines or pyrimidines, and are part of the:", a: ["Peptide chain", "Amino acid", "Nucleotide", "Fatty acid"], c: "Nucleotide" },
+            { q: "Low-Density Lipoprotein (LDL) is primarily composed of:", a: ["Triglycerides", "Protein", "Carbohydrate", "Cholesterol"], c: "Cholesterol" },
+            { q: "Polysaccharides are joined together in straight chains or:", a: ["Triple helices", "Branched chains", "Single loops", "Ring structures"], c: "Branched chains" },
+            { q: "Which class of protein helps to regulate bodily functions and processes (e.g., Insulin)?", a: ["Enzymes", "Antibodies", "Hormones", "Structural proteins"], c: "Hormones" },
+            { q: "When energy is produced from Catabolism, it is released in the form of:", a: ["Glucose", "Amino Acids", "VLDL", "ATP"], c: "ATP" },
+            { q: "Which monosaccharide is typically not found free in large quantities but is part of disaccharides?", a: ["Glucose", "Fructose", "Ribose", "Galactose"], c: "Galactose" },
+            { q: "The genetic code is based on the sequence of bases stored on:", a: ["rRNA", "tRNA", "DNA", "VLDL"], c: "DNA" },
+            { q: "The difference between an infection that is localized versus one that is systemic is its:", a: ["Contagiousness", "Spread throughout the body", "Severity of symptoms", "Type of pathogen"], c: "Spread throughout the body" },
+            { q: "Fungi and Protozoa are grouped together because they are sometimes referred to as:", a: ["Mycolic infections", "Single-celled organisms", "Microbe-like organisms", "Helminths"], c: "Microbe-like organisms" },
+            { q: "What is the key danger posed by the Treponema pallidum spirochete (Syphilis)?", a: ["It causes malaria.", "It is an animal vector.", "It is not a true pox.", "It causes superinfection."], c: "It is not a true pox." }, // Context from slide 16
+            { q: "The 'Side Rails' of the DNA ladder are formed by:", a: ["Nitrogenous bases", "Sugar and Phosphate groups", "Amino acids", "Lipid chains"], c: "Sugar and Phosphate groups" },
+            { q: "In DNA, the bases Thymine and Cytosine belong to the group of molecules called:", a: ["Purines", "Pyrimidines", "Nucleosides", "Ribosomes"], c: "Pyrimidines" }, // Implied from G/A being purines
+            { q: "Which component of the nucleotide contains the genetic information?", a: ["Phosphate group", "Simple sugar", "Nitrogenous base", "Glycerol"], c: "Nitrogenous base" },
+            { q: "The liver's process of converting urea to kidney excretion is part of the elimination of:", a: ["Lipid waste", "Nitrogen", "Excess carbohydrates", "Phosphates"], c: "Nitrogen" },
+            { q: "If a protein is denatured, it can no longer fulfill its function as an:", a: ["Essential amino acid", "Enzyme", "Codon", "Triglyceride"], c: "Enzyme" },
+            { q: "The body must maintain a constant supply of which substance for fuel?", a: ["Protein", "Lipids", "Glucose", "DNA"], c: "Glucose" },
+            { q: "The initial reaction of anaerobic catabolism converts glucose into:", a: ["ATP", "Carbon Dioxide", "Lactic Acid", "Glycogen"], c: "Lactic Acid" },
+            { q: "When a pathogen is shed from the body, it uses which pathway?", a: ["Portal of Entry", "Reservoir", "Portal of Exit", "Vector"], c: "Portal of Exit" },
+            { q: "Which type of protein provides the framework and support for cells and tissues?", a: ["Antibodies", "Hormones", "Structural Proteins", "Enzymes"], c: "Structural Proteins" },
+            { q: "The definition of an 'Essential' substance (like an amino acid) is that it:", a: ["The body can synthesize.", "Must be included in the diet.", "Is used for energy production.", "Is a structural component."], c: "Must be included in the diet." },
+            { q: "If the body breaks down large, complex substances to produce energy, the overall process is part of:", a: ["Anabolism", "Catabolism", "Translation", "Transcription"], c: "Catabolism" },
+            { q: "The three monosaccharides that form the largest component of dietary carbohydrates are Glucose, Fructose, and:", a: ["Ribose", "Galactose", "Maltose", "Starch"], c: "Galactose" },
+            { q: "Which type of lipoprotein is highest in triglycerides?", a: ["HDL", "LDL", "VLDL", "Chylomicron"], c: "VLDL" },
+            { q: "The structure of tRNA is designed to carry a single molecule of a(n):", a: ["Nucleotide", "Amino acid", "Phosphate group", "Sugar"], c: "Amino acid" },
+            { q: "In the context of infection, a 'Reservoir' is defined as the place where the pathogen:", a: ["Dies out", "Enters the body", "Hides and multiplies", "Is destroyed by antibiotics"], c: "Hides and multiplies" },
+            { q: "The use of 'ids' in the term 'Lipoids' indicates that they are:", a: ["True lipids", "Not synthesized by the body", "Lipid substances/relatives", "Only found in plants"], c: "Lipid substances/relatives" },
+            { q: "The process of protein synthesis ensures that amino acids are assembled in a specific:", a: ["Order of energy", "Sequence", "Type of bond", "Lipid ratio"], c: "Sequence" },
+            { q: "Which term best describes the general mechanism of a pathogen entering the body via the skin?", a: ["Airborne", "Parenteral route", "Gastrointestinal", "Vector-borne"], c: "Parenteral route" },
+            { q: "A characteristic of normal flora is that they:", a: ["Cause disease", "Are only found in the gut", "Are beneficial or harmless", "Always cause superinfection"], c: "Are beneficial or harmless" },
+            { q: "What is the primary function of Hemoglobin?", a: ["Transporting lipids", "Carrying oxygen", "Regulating blood sugar", "Building cell structures"], c: "Carrying oxygen" },
+            { q: "The final step in aerobic catabolism of glucose yields ATP, CO2, and:", a: ["Urea", "Lactic Acid", "Water", "Glycogen"], c: "Water" },
+            { q: "The use of proteins is critical for forming which line of defense in the body?", a: ["Hormones", "Enzymes", "Antibodies", "Plasma proteins"], c: "Antibodies" },
+            { q: "The most common portal of exit, especially during coughing or sneezing, is the:", a: ["Genitourinary tract", "Skin", "Gastrointestinal tract", "Respiratory tract"], c: "Respiratory tract" },
+        ];
+        
+        // --- QUIZ LOGIC ---
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let answered = false;
+        
+        const startScreen = document.getElementById('startScreen');
+        const quizContent = document.getElementById('quizContent');
+        const scoreScreen = document.getElementById('scoreScreen');
+        const questionCount = document.getElementById('questionCount');
+        const currentScore = document.getElementById('currentScore');
+        const questionText = document.getElementById('questionText');
+        const answersContainer = document.getElementById('answersContainer');
+        const feedback = document.getElementById('feedback');
+        const nextButton = document.getElementById('nextButton');
+
+        document.getElementById('startButton').addEventListener('click', startQuiz);
+        nextButton.addEventListener('click', nextQuestion);
+
+        function startQuiz() {
+            startScreen.classList.add('hidden');
+            quizContent.classList.remove('hidden');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                displayScore();
+                return;
+            }
+
+            answered = false;
+            feedback.innerHTML = '';
+            nextButton.disabled = true;
+            nextButton.classList.add('opacity-50', 'cursor-not-allowed');
+
+            const qData = questions[currentQuestionIndex];
+            const answerChoices = qData.a;
+            
+            questionCount.textContent = `Question ${currentQuestionIndex + 1}/${questions.length}`;
+            currentScore.textContent = `Score: ${score}`;
+            questionText.textContent = qData.q;
+            answersContainer.innerHTML = ''; // Clear previous answers
+
+            const labelMap = ['A', 'B', 'C', 'D'];
+
+            answerChoices.forEach((choice, index) => {
+                const choiceElement = document.createElement('button');
+                choiceElement.className = 'answer-choice w-full text-left p-4 rounded-lg bg-gray-50 text-gray-800 font-medium shadow-sm hover:bg-green-50 transition-colors duration-200';
+                choiceElement.innerHTML = `<span class="font-bold mr-2">${labelMap[index]}.</span> ${choice}`;
+                choiceElement.setAttribute('data-answer', choice);
+                choiceElement.addEventListener('click', () => handleAnswerClick(choiceElement, choice, qData.c));
+                answersContainer.appendChild(choiceElement);
+            });
+        }
+
+        function handleAnswerClick(clickedElement, selectedAnswer, correctAnswer) {
+            if (answered) return; // Prevent double-clicking
+            answered = true;
+            
+            // Re-enable next button
+            nextButton.disabled = false;
+            nextButton.classList.remove('opacity-50', 'cursor-not-allowed');
+
+            // Find all buttons to highlight the correct one
+            const allChoices = answersContainer.querySelectorAll('.answer-choice');
+            let correctElement = null;
+            
+            allChoices.forEach(choice => {
+                if (choice.getAttribute('data-answer') === correctAnswer) {
+                    correctElement = choice;
+                }
+            });
+
+            if (selectedAnswer === correctAnswer) {
+                score++;
+                currentScore.textContent = `Score: ${score}`;
+                clickedElement.classList.add('correct');
+                feedback.innerHTML = '<span class="text-green-700">✅ Correct!</span>';
+            } else {
+                clickedElement.classList.add('incorrect');
+                if (correctElement) {
+                    correctElement.classList.add('correct'); // Highlight the correct answer
+                }
+                feedback.innerHTML = `<span class="text-red-600">❌ Incorrect</span> — the correct answer is: <span class="font-semibold text-green-700">${correctAnswer}</span>.`;
+            }
+
+            // Disable all buttons after one is clicked
+            allChoices.forEach(choice => choice.classList.add('pointer-events-none'));
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            renderQuestion();
+            // Scroll to top of the card for the next question
+            quizContainer.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function displayScore() {
+            quizContent.classList.add('hidden');
+            scoreScreen.classList.remove('hidden');
+            document.getElementById('finalScore').textContent = `${score} / ${questions.length}`;
+        }
+    </script>
+</body>
+</html>
