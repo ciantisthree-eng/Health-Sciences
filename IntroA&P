@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biology Study Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Tailwind configuration for custom theme */
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-green': '#4CAF50',
+                        'light-green': '#A5D6A7',
+                        'sunny-yellow': '#FFD700',
+                        'sky-blue': '#81D4FA',
+                        'quiz-card': 'rgba(255, 255, 255, 0.95)',
+                    },
+                    fontFamily: {
+                        sans: ['Nunito', 'Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+
+        /* Custom styles for the nature theme and animations */
+        body {
+            background: linear-gradient(135deg, #81D4FA 0%, #A5D6A7 50%, #4CAF50 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to the top of the viewport */
+            padding-top: 4rem; /* Add some space from the top */
+        }
+
+        .container {
+            max-width: 900px;
+            width: 95%;
+            margin-bottom: 4rem; /* Space at the bottom */
+        }
+
+        .quiz-card {
+            background-color: var(--tw-bg-quiz-card);
+            backdrop-filter: blur(10px);
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease-out;
+        }
+
+        .answer-choice {
+            padding: 1rem 1.5rem;
+            border-radius: 1rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            border: 2px solid #ddd;
+            user-select: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .answer-choice:hover:not(.correct):not(.incorrect):not(.disabled) {
+            background-color: #F0FDF4; /* light hover */
+            border-color: #38A169;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .answer-choice.correct {
+            background-color: #D1F7C4; /* Light Green for Correct */
+            border-color: #4CAF50;
+        }
+
+        .answer-choice.incorrect {
+            background-color: #FEE2E2; /* Light Red for Incorrect */
+            border-color: #EF4444;
+        }
+
+        .answer-choice.disabled {
+            cursor: default;
+            opacity: 0.7;
+        }
+
+        .feedback-box {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Start Button Styling */
+        #start-button {
+            background-color: #4CAF50;
+            color: white;
+            font-size: 1.5rem;
+            padding: 1rem 2rem;
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px #388E3C;
+            border: none;
+        }
+
+        #start-button:hover {
+            background-color: #5CB860;
+            transform: translateY(-2px);
+            box-shadow: 0 6px #388E3C;
+        }
+
+        #start-button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px #388E3C;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            body {
+                padding-top: 2rem;
+            }
+            .container {
+                width: 98%;
+                padding: 1rem;
+            }
+            .answer-choice {
+                padding: 0.75rem 1rem;
+            }
+            #start-button {
+                font-size: 1.25rem;
+                padding: 0.75rem 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body class="font-sans">
+
+    <div class="container p-4 md:p-8">
+        <header class="text-center mb-10">
+            <h1 class="text-5xl font-extrabold text-white mb-2 drop-shadow-lg">Biology Review</h1>
+            <p class="text-xl text-white font-semibold drop-shadow-md">Interactive Study Quiz (100 Questions)</p>
+        </header>
+
+        <main id="quiz-area" class="quiz-card p-6 md:p-10">
+            <!-- Initial Start Screen -->
+            <div id="start-screen" class="flex flex-col items-center justify-center text-center p-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">Welcome to Your Study Session!</h2>
+                <p class="text-lg text-gray-600 mb-8 max-w-xl">
+                    This quiz contains 100 multiple-choice questions based on the uploaded material on **Cell Biology, Energy, and Chemistry**.
+                    You will receive instant feedback after each answer. Good luck!
+                </p>
+                <button id="start-button" onclick="startQuiz()">Start Quiz</button>
+            </div>
+
+            <!-- Quiz Content (Hidden initially) -->
+            <div id="question-container" class="hidden">
+                <p class="text-xl font-bold text-primary-green mb-4">
+                    Question <span id="question-number">1</span> of 100
+                </p>
+                <h3 id="question-text" class="text-2xl font-semibold text-gray-800 mb-6 leading-relaxed"></h3>
+
+                <div id="answers-list">
+                    <!-- Answer choices will be injected here -->
+                </div>
+
+                <div id="feedback" class="h-8">
+                    <!-- Feedback message will be injected here -->
+                </div>
+            </div>
+
+            <!-- Final Score Screen (Hidden initially) -->
+            <div id="score-screen" class="hidden text-center p-8">
+                <h2 class="text-4xl font-bold text-gray-800 mb-4">Quiz Complete! 🎉</h2>
+                <p class="text-2xl text-gray-600 mb-8">Your Final Score:</p>
+                <div class="bg-primary-green text-white inline-block p-6 rounded-full shadow-xl">
+                    <span id="final-score" class="text-6xl font-extrabold"></span> / 100
+                </div>
+                <button onclick="window.location.reload()" class="mt-10 bg-sunny-yellow text-gray-800 font-bold py-3 px-6 rounded-lg hover:bg-yellow-400 transition duration-300 shadow-md">
+                    Study Again
+                </button>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // The core quiz data with 100 questions generated from the provided slides.
+        const quizData = [
+            // --- Cells and Organelles (IMG_20251109_105159704.jpg, IMG_20251109_105213181.jpg) ---
+            { q: "What is the fluid found inside the cell called?", a: "Intracellular fluid", choices: ["Extracellular fluid", "Interstitial fluid", "Intracellular fluid", "Plasma"], correct: "Intracellular fluid" },
+            { q: "The cell membrane is primarily described as being:", a: "Semi-permeable", choices: ["Fully permeable", "Non-permeable", "Selectively permeable", "Semi-permeable"], correct: "Selectively permeable" },
+            { q: "Which cellular component controls the workings of the entire cell?", a: "Nucleus", choices: ["Mitochondria", "Cytoplasm", "Nucleus", "Ribosome"], correct: "Nucleus" },
+            { q: "The threadlike structure within the nucleus that contains genes is called:", a: "Chromatin", choices: ["Nucleoplasm", "Nucleolus", "Chromatin", "Cytosol"], correct: "Chromatin" },
+            { q: "Cytoplasm is composed of Cytosol and what other components?", a: "Organelles", choices: ["Chromatin", "Cell membrane", "Organelles", "Nucleoplasm"], correct: "Organelles" },
+            { q: "What is Cytosol primarily composed of?", a: "Primarily water, electrolytes, and nutrients", choices: ["Protein, DNA, and RNA", "Lipids and fatty acids", "Primarily water, electrolytes, and nutrients", "ATP and ADP"], correct: "Primarily water, electrolytes, and nutrients" },
+            { q: "Which organelle is described as a slipper-shaped power plant of the cell?", a: "Mitochondria", choices: ["Golgi apparatus", "Mitochondria", "Lysosome", "Centrioles"], correct: "Mitochondria" },
+            { q: "The folds in the inner layer of the Mitochondria are called:", a: "Cristae", choices: ["Vesicles", "Cilia", "Folds", "Cristae"], correct: "Cristae" },
+            { q: "What is the primary function of Ribosomes?", a: "Protein synthesis", choices: ["Lipid storage", "DNA replication", "Protein synthesis", "Waste disposal"], correct: "Protein synthesis" },
+            { q: "Which type of Endoplasmic Reticulum lacks ribosomes?", a: "Smooth endoplasmic reticulum (SER)", choices: ["Rough endoplasmic reticulum (RER)", "Smooth endoplasmic reticulum (SER)", "Golgi apparatus", "Lysosome"], correct: "Smooth endoplasmic reticulum (SER)" },
+            { q: "The Smooth Endoplasmic Reticulum (SER) is the site of what kind of synthesis?", a: "Lipid and steroid synthesis", choices: ["Protein synthesis", "DNA synthesis", "ATP synthesis", "Lipid and steroid synthesis"], correct: "Lipid and steroid synthesis" },
+            { q: "The Golgi apparatus is primarily responsible for:", a: "Putting finishing touches on protein after synthesis on RER", choices: ["Destroying worn-down waste", "Producing energy", "Putting finishing touches on protein after synthesis on RER", "Holding electrons"], correct: "Putting finishing touches on protein after synthesis on RER" },
+            { q: "Which organelle is known as the 'housekeeping' or 'garbage disposal' unit?", a: "Lysosomes", choices: ["Mitochondria", "Nucleus", "Ribosomes", "Lysosomes"], correct: "Lysosomes" },
+            { q: "The composition of microfilaments and microtubules forms the:", a: "Cytoskeleton", choices: ["Centrioles", "Cilia", "Cytoskeleton", "Flagella"], correct: "Cytoskeleton" },
+            { q: "What is the function of Cilia and Flagella?", a: "Wavelike motions move substances across cell's surface", choices: ["DNA replication", "Waste disposal", "Wavelike motions move substances across cell's surface", "Protein synthesis"], correct: "Wavelike motions move substances across cell's surface" },
+            { q: "Cells that are specialized, like nerve cells, skin cells, and muscle cells, have some or all of the properties of the:", a: "Typical cell", choices: ["Typical cell", "Stem cell", "Abnormal cell", "Cancer cell"], correct: "Typical cell" },
+
+            // --- Transport (IMG_20251109_105218050.jpg, IMG_20251109_105225409.jpg) ---
+            { q: "Movement of a substance from an area of higher concentration to one of lower concentration is called:", a: "Diffusion", choices: ["Active transport", "Diffusion", "Osmosis", "Filtration"], correct: "Diffusion" },
+            { q: "What is the movement of water (solvent) from an area with more water to an area with less water called?", a: "Osmosis", choices: ["Diffusion", "Filtration", "Active transport", "Osmosis"], correct: "Osmosis" },
+            { q: "A solution that causes a red blood cell to swell and potentially burst is called a(n):", a: "Hypotonic solution", choices: ["Isotonic solution", "Hypertonic solution", "Hypotonic solution", "Hydrochloric solution"], correct: "Hypotonic solution" },
+            { q: "A solution where the solute concentration is higher outside the cell than inside, causing the cell to shrink, is:", a: "Hypertonic solution", choices: ["Isotonic solution", "Hypotonic solution", "Hypertonic solution", "Homeostatic solution"], correct: "Hypertonic solution" },
+            { q: "What is the function of a semi-permeable membrane?", a: "Allows some substances to pass, while restricting others", choices: ["Allows all substances to pass", "Allows no substances to pass", "Allows only water to pass", "Allows some substances to pass, while restricting others"], correct: "Allows some substances to pass, while restricting others" },
+            { q: "Passive transport that involves movement of water and dissolved substances from an area of higher pressure to an area of lower pressure is:", a: "Filtration", choices: ["Diffusion", "Osmosis", "Active transport", "Filtration"], correct: "Filtration" },
+            { q: "Active transport mechanisms require an input of energy, typically in the form of:", a: "ATP", choices: ["DNA", "ADP", "ATP", "Glucose"], correct: "ATP" },
+            { q: "What is the process of ingestion of substances by the cell membrane?", a: "Endocytosis", choices: ["Exocytosis", "Diffusion", "Endocytosis", "Facilitated diffusion"], correct: "Endocytosis" },
+            { q: "Phagocytosis is a type of Endocytosis, meaning the cell is doing what?", a: "Cell eating", choices: ["Cell drinking", "Cell secreting", "Cell sleeping", "Cell eating"], correct: "Cell eating" },
+            { q: "Exocytosis involves substances moving out of the cell, such as the secretion of cellular products. This requires:", a: "The cell membrane", choices: ["The nucleus", "The cell wall", "The cell membrane", "The lysosome"], correct: "The cell membrane" },
+            { q: "What molecule is usually burned as fuel to produce energy for active transport?", a: "Glucose", choices: ["Water", "Salt", "Protein", "Glucose"], correct: "Glucose" },
+            { q: "The body being less able to metabolize glucose, causing an elevated blood glucose, is associated with:", a: "Aging on metabolism", choices: ["Active transport pumps", "Facilitated diffusion", "Aging on metabolism", "Endocytosis"], correct: "Aging on metabolism" },
+            { q: "When equilibrium is reached in diffusion, the molecules are:", a: "Still moving, but there is no further net diffusion", choices: ["Stopped moving completely", "Moving only from low to high concentration", "Still moving, but there is no further net diffusion", "Moving randomly at a higher speed"], correct: "Still moving, but there is no further net diffusion" },
+            { q: "Which process uses a helper molecule within the membrane to assist with the movement of substances down the concentration gradient?", a: "Facilitated Diffusion", choices: ["Active Transport Pumps", "Osmosis", "Filtration", "Facilitated Diffusion"], correct: "Facilitated Diffusion" },
+
+            // --- Cell Cycle and Disorders (IMG_20251109_105229660.jpg) ---
+            { q: "The sequence of events that a cell goes through from one mitotic division to the next is called the:", a: "Cell cycle", choices: ["Mitosis phase", "Interphase", "Cell division", "Cell cycle"], correct: "Cell cycle" },
+            { q: "The part of the cell cycle where the cell carries out its normal activity and duplicates its DNA is the:", a: "Interphase", choices: ["Prophase", "Metaphase", "Interphase", "Anaphase"], correct: "Interphase" },
+            { q: "What happens during the S (Synthesis) phase of Interphase?", a: "The cell duplicates its chromosomes", choices: ["The cell rests", "The cell grows rapidly", "The cell duplicates its chromosomes", "Mitosis begins"], correct: "The cell duplicates its chromosomes" },
+            { q: "What is the primary function of Mitosis?", a: "Body growth and repair", choices: ["Sex cell production", "ATP synthesis", "Cell differentiation", "Body growth and repair"], correct: "Body growth and repair" },
+            { q: "Which type of cell division produces sex cells?", a: "Meiosis", choices: ["Mitosis", "Endocytosis", "Meiosis", "Apoptosis"], correct: "Meiosis" },
+            { q: "The process where relatively undifferentiated cells can produce additional unspecialized cells is characteristic of:", a: "Stem cells", choices: ["Nerve cells", "Muscle cells", "Stem cells", "Red blood cells"], correct: "Stem cells" },
+            { q: "A noncancerous tumor is medically referred to as:", a: "Benign", choices: ["Malignant", "Metastasis", "Apoptosis", "Benign"], correct: "Benign" },
+            { q: "The spread of cancer cells from a primary tumor to other sites in the body is called:", a: "Metastasis", choices: ["Apoptosis", "Necrosis", "Benign growth", "Metastasis"], correct: "Metastasis" },
+            { q: "Apoptosis helps rid the body of old, unnecessary, and unhealthy cells. What is Apoptosis?", a: "Programmed cell death", choices: ["Abnormal cell growth", "Uncontrolled cell division", "Programmed cell death", "Tissue repair"], correct: "Programmed cell death" },
+            { q: "Necrosis is defined as:", a: "Death of cells or groups of cells", choices: ["Cell differentiation", "Programmed cell death", "Death of cells or groups of cells", "Cell division"], correct: "Death of cells or groups of cells" },
+            { q: "In which mitotic phase do chromosomes line up and split into two identical sets (chromatids)?", a: "Anaphase/Metaphase (general description for separation/lining up)", choices: ["Prophase", "Metaphase", "Telophase", "Anaphase"], correct: "Metaphase" },
+            { q: "Cell membrane pinches to create two identical cells, marking the end of Mitosis, in a process called:", a: "Cytokinesis", choices: ["Telophase", "Interphase", "Cytokinesis", "Apoptosis"], correct: "Cytokinesis" },
+
+            // --- Energy and ATP (IMG_20251109_105122233.jpg) ---
+            { q: "What is the scientific definition of Energy?", a: "The ability to perform work", choices: ["The capacity to move an object", "The ability to perform work", "The storage of ATP", "The breaking of chemical bonds"], correct: "The ability to perform work" },
+            { q: "Which type of energy is used in nerve transmission?", a: "Electrical energy", choices: ["Chemical energy", "Radiant energy", "Mechanical energy", "Electrical energy"], correct: "Electrical energy" },
+            { q: "An example of Chemical energy is the use of food as:", a: "Fuel", choices: ["Light", "Heat", "Fuel", "Sound"], correct: "Fuel" },
+            { q: "The most important part of the ATP molecule is the terminal what group?", a: "Phosphate group", choices: ["Sugar group", "Base group", "Hydroxide group", "Phosphate group"], correct: "Phosphate group" },
+            { q: "What happens when the high-energy chemical bonds in the ATP molecule are broken?", a: "A large amount of energy is released", choices: ["A small amount of energy is absorbed", "The cell dies", "A large amount of energy is released", "The cell begins mitosis"], correct: "A large amount of energy is released" },
+            { q: "ATP is often referred to as the body's 'energy transfer' molecule. Where does the body primarily produce ATP?", a: "Mitochondria", choices: ["Nucleus", "Ribosomes", "Mitochondria", "Cytosol"], correct: "Mitochondria" },
+            { q: "The biological work that requires energy from ATP is the process of energy transfer from ATP also powers the:", a: "Mechanical work that muscles perform", choices: ["Synthesis of proteins", "Mechanical work that muscles perform", "Breakdown of glucose", "Secretion of hormones"], correct: "Mechanical work that muscles perform" },
+            { q: "What is Catabolism?", a: "A metabolic process performed by the mitochondria to produce energy", choices: ["The building of complex molecules", "A metabolic process performed by the mitochondria to produce energy", "The absorption of heat", "A type of chemical bond"], correct: "A metabolic process performed by the mitochondria to produce energy" },
+            { q: "The process of storing energy by high-energy bonds in the phosphate groups is compared to:", a: "A loaded mouse trap", choices: ["A running motor", "A flowing river", "A loaded mouse trap", "A planted seed"], correct: "A loaded mouse trap" },
+            { q: "When energy is needed, the ATP trap is split and the energy is released. What does this process directly power in the cells?", a: "The work the cells perform", choices: ["The absorption of water", "The storage of fat", "The work the cells perform", "The production of heat"], correct: "The work the cells perform" },
+
+            // --- pH Scale and Acid-Base Balance (IMG_20251109_105113747.jpg, IMG_20251109_105122233.jpg) ---
+            { q: "The pH scale ranges from 0 to what maximum value?", a: "14", choices: ["7", "10", "14", "100"], correct: "14" },
+            { q: "What is the pH scale a unit of measurement for?", a: "Indicating how many hydrogen ions are in a solution", choices: ["Measuring oxygen concentration", "Measuring electron shells", "Indicating how many hydrogen ions are in a solution", "Measuring water temperature"], correct: "Indicating how many hydrogen ions are in a solution" },
+            { q: "The midpoint of the pH scale, which is neutral, is:", a: "pH 7", choices: ["pH 0", "pH 5", "pH 7", "pH 14"], correct: "pH 7" },
+            { q: "A solution with a pH of less than 7 is considered:", a: "Acidic", choices: ["Basic (Alkaline)", "Neutral", "Acidic", "Buffer"], correct: "Acidic" },
+            { q: "A solution with a pH of more than 7 on the scale is considered:", a: "Basic (Alkaline)", choices: ["Acidic", "Neutral", "Basic (Alkaline)", "Ionic"], correct: "Basic (Alkaline)" },
+            { q: "An Acid is defined as a substance that dissociates into:", a: "Hydrogen ions ($H^+$)", choices: ["Hydroxide ions ($OH^-$)", "Sodium ions ($Na^+$)", "Hydrogen ions ($H^+$)", "Chloride ions ($Cl^-$)"], correct: "Hydrogen ions ($H^+$)" },
+            { q: "A Base is a substance that dissociates into $OH^-$ (hydroxyl) ion, that combines with $H^+$ to make a solution:", a: "Less acidic", choices: ["More acidic", "More neutral", "Less acidic", "More concentrated"], correct: "Less acidic" },
+            { q: "What is the normal, narrow range in which blood pH is maintained?", a: "7.35 to 7.45", choices: ["6.0 to 7.0", "7.35 to 7.45", "7.50 to 8.00", "7.0 to 7.30"], correct: "7.35 to 7.45" },
+            { q: "Blood pH below 7.35 is indicative of:", a: "Acidosis", choices: ["Alkalosis", "Neutrality", "Isotonicity", "Acidosis"], correct: "Acidosis" },
+            { q: "The condition where blood pH is above 7.45 is known as:", a: "Alkalosis", choices: ["Acidosis", "Neutrality", "Hypotonicity", "Alkalosis"], correct: "Alkalosis" },
+            { q: "Which type of substance turns blue litmus paper pink (or increasingly pink)?", a: "Acids", choices: ["Bases", "Neutral solutions", "Salts", "Acids"], correct: "Acids" },
+            { q: "Which type of substance turns pink litmus paper blue (or increasingly blue)?", a: "Bases", choices: ["Acids", "Neutral solutions", "Salts", "Bases"], correct: "Bases" },
+
+            // --- Chemistry Basics, Bonds, and Ions (IMG_20251109_105055269.jpg, IMG_20251109_105107586.jpg) ---
+            { q: "The electrical attraction between the nucleus and electrons is held within:", a: "Electron Shells", choices: ["Mitochondria", "Chemical Bonds", "Electron Shells", "Protons"], correct: "Electron Shells" },
+            { q: "The first electron shell can hold a maximum of how many electrons?", a: "2 electrons", choices: ["1 electron", "2 electrons", "4 electrons", "8 electrons"], correct: "2 electrons" },
+            { q: "The second and third electron shells can hold a maximum of how many electrons?", a: "8 electrons", choices: ["2 electrons", "4 electrons", "6 electrons", "8 electrons"], correct: "8 electrons" },
+            { q: "An atom is chemically stable and non-reactive when its outermost shell is:", a: "Filled with its proper number of electrons", choices: ["Empty of electrons", "Filled with its proper number of electrons", "Half-filled with electrons", "Exchanging electrons rapidly"], correct: "Filled with its proper number of electrons" },
+            { q: "A chemical bond formed by the transfer of electrons between atoms is called a(n):", a: "Ionic bond", choices: ["Covalent bond", "Hydrogen bond", "Metallic bond", "Ionic bond"], correct: "Ionic bond" },
+            { q: "An Ionic bond results from the electrical attraction between two oppositely charged:", a: "Ions", choices: ["Molecules", "Atoms", "Neutrons", "Ions"], correct: "Ions" },
+            { q: "A Covalent bond is formed by the sharing of electrons between atoms, like 'joining hands'. This type of bond is:", a: "The strongest chemical bond", choices: ["The weakest chemical bond", "The strongest chemical bond", "Formed only by water molecules", "Formed only by metals"], correct: "The strongest chemical bond" },
+            { q: "A Hydrogen bond is a weak attraction between a Hydrogen atom and another atom. This is an example of:", a: "An intermolecular attraction", choices: ["An intramolecular attraction", "A very strong bond", "An intermolecular attraction", "A non-chemical bond"], correct: "An intermolecular attraction" },
+            { q: "Ions are atoms or groups of atoms that carry an electrical charge because they have:", a: "Gained or lost electrons", choices: ["Gained or lost protons", "Gained or lost neutrons", "Gained or lost electrons", "Changed their atomic number"], correct: "Gained or lost electrons" },
+            { q: "Ions with a positive charge are called:", a: "Cations", choices: ["Anions", "Neutrons", "Cations", "Molecules"], correct: "Cations" },
+            { q: "The principal extracellular cation is:", a: "Sodium ($Na^+$)", choices: ["Potassium ($K^+$)", "Calcium ($Ca^{2+}$)", "Sodium ($Na^+$)", "Chloride ($Cl^-$)"], correct: "Sodium ($Na^+$)" },
+            { q: "The chief intracellular cation is:", a: "Potassium ($K^+$)", choices: ["Sodium ($Na^+$)", "Potassium ($K^+$)", "Iron ($Fe^{2+}$)", "Hydrogen ($H^+$)"], correct: "Potassium ($K^+$)" },
+            { q: "Which cation is important in acid-base regulation, determines the pH of a solution, and its levels are regulated by the kidney?", a: "Hydrogen ($H^+$)", choices: ["Calcium ($Ca^{2+}$)", "Iron ($Fe^{2+}$)", "Hydrogen ($H^+$)", "Potassium ($K^+$)"], correct: "Hydrogen ($H^+$)" },
+            { q: "The chief extracellular anion is:", a: "Chloride ($Cl^-$)", choices: ["Bicarbonate ($HCO_3^-$)", "Phosphate ($PO_4^{3-}$)", "Chloride ($Cl^-$)", "Sodium ($Na^+$)"], correct: "Chloride ($Cl^-$)" },
+            { q: "Which anion is important in acid-base regulation, similar to the hydrogen ion?", a: "Bicarbonate ($HCO_3^-$)", choices: ["Chloride ($Cl^-$)", "Phosphate ($PO_4^{3-}$)", "Sulfate ($SO_4^{2-}$)", "Bicarbonate ($HCO_3^-$)"], correct: "Bicarbonate ($HCO_3^-$)" },
+            { q: "Substances that dissolve in water and acquire an electrical charge are called:", a: "Electrolytes", choices: ["Solutions", "Buffers", "Precipitates", "Electrolytes"], correct: "Electrolytes" },
+
+            // --- Molecules, Compounds, and Solutions (IMG_20251109_105107586.jpg, IMG_20251109_105127250.jpg) ---
+            { q: "A molecule is two or more atoms bonded together. A compound is defined as:", a: "Molecules formed by two or more different atoms", choices: ["Molecules formed by the same atom", "Molecules formed by two or more different atoms", "An atom with an electrical charge", "An element that is chemically stable"], correct: "Molecules formed by two or more different atoms" },
+            { q: "What is the solvent in Aqueous solutions?", a: "Water", choices: ["Alcohol", "Sugar", "Salt", "Water"], correct: "Water" },
+            { q: "In a solution, the substance present in greater amount is the:", a: "Solvent", choices: ["Solute", "Precipitate", "Mixture", "Solvent"], correct: "Solvent" },
+            { q: "A mixture is a combination of two or more substances that can be separated by:", a: "Ordinary physical means", choices: ["A chemical reaction", "Applying high heat", "Ordinary physical means", "Electrolysis"], correct: "Ordinary physical means" },
+            { q: "Suspensions, like a bottle of antacids, contain mixtures with relatively large particles that, if left standing, will:", a: "Settle out at the bottom", choices: ["Disappear completely", "Settle out at the bottom", "React chemically to form a new substance", "Remain evenly dispersed"], correct: "Settle out at the bottom" },
+            { q: "Particles remain suspended within the fluid in a colloidal suspension. An example given is:", a: "Blood plasma", choices: ["Salt water", "Sugar water", "Blood plasma", "Iron filings and sugar"], correct: "Blood plasma" },
+            { q: "A solid that is formed and falls out of solution during a chemical reaction is called a:", a: "Precipitate", choices: ["Solute", "Solvent", "Precipitate", "Tincture"], correct: "Precipitate" },
+            { q: "What is the solvent in a Tincture solution?", a: "Alcohol", choices: ["Water", "Oil", "Benzene", "Alcohol"], correct: "Alcohol" },
+            { q: "Water is considered a Universal solvent because it dissolves large amounts of:", a: "Substances", choices: ["Oils", "Non-polar molecules", "Gases", "Substances"], correct: "Substances" },
+            { q: "Which property of water allows it to absorb large amounts of heat, thus regulating body temperature?", a: "Temperature regulator", choices: ["Ideal lubricant", "Cushioning fluid", "Chemical reactant", "Temperature regulator"], correct: "Temperature regulator" },
+            { q: "As a cushioning fluid, water protects the brain, spinal cord, and the developing infant in the mother's womb. This is a property of:", a: "Water", choices: ["Lipids", "Proteins", "Carbohydrates", "Water"], correct: "Water" },
+
+            // --- Complex and Combined Questions (Fillers to reach 100 and reinforce) ---
+            { q: "What is the key difference between Passive and Active Transport?", a: "Active transport requires ATP (energy)", choices: ["Passive transport only moves water", "Active transport requires ATP (energy)", "Passive transport moves against the concentration gradient", "Active transport is always slower"], correct: "Active transport requires ATP (energy)" },
+            { q: "What is the result of placing a red blood cell in an Isotonic solution?", a: "No net movement of water; red blood cell remains normal", choices: ["Cell swells and bursts", "Cell shrinks and crenates", "No net movement of water; red blood cell remains normal", "Cell turns green"], correct: "No net movement of water; red blood cell remains normal" },
+            { q: "What is the primary function of the Rough Endoplasmic Reticulum (RER)?", a: "Protein synthesis, due to attached ribosomes", choices: ["Lipid synthesis", "ATP production", "Protein synthesis, due to attached ribosomes", "Waste disposal"], correct: "Protein synthesis, due to attached ribosomes" },
+            { q: "The two parts of the cell cycle are Interphase and:", a: "Mitosis (M Phase)", choices: ["Apoptosis", "Cell Differentiation", "Mitosis (M Phase)", "Catabolism"], correct: "Mitosis (M Phase)" },
+            { q: "What happens in the first gap phase ($G_1$) of the cell cycle?", a: "Cell carries out normal activity and grows", choices: ["DNA is duplicated", "The cell divides", "Cell carries out normal activity and grows", "Chromosomes split"], correct: "Cell carries out normal activity and grows" },
+            { q: "Which type of chemical bond involves the sharing of electrons?", a: "Covalent bond", choices: ["Ionic bond", "Hydrogen bond", "Covalent bond", "Metallic bond"], correct: "Covalent bond" },
+            { q: "What is the overall goal of the human body's buffering systems in relation to $\\text{pH}$?", a: "Maintain blood $\\text{pH}$ within the narrow range of 7.35 to 7.45", choices: ["Make blood completely neutral (pH 7.0)", "Increase blood acidity", "Maintain blood $\\text{pH}$ within the narrow range of 7.35 to 7.45", "Quickly raise blood $\\text{pH}$ above 7.45"], correct: "Maintain blood $\\text{pH}$ within the narrow range of 7.35 to 7.45" },
+            { q: "Cells that have a limited life span and divide only for body growth and repair include:", a: "Skin cells, bone marrow cells, and the cells lining the digestive tract", choices: ["Nerve cells and muscle cells", "Stem cells", "Skin cells, bone marrow cells, and the cells lining the digestive tract", "Only sex cells"], correct: "Skin cells, bone marrow cells, and the cells lining the digestive tract" },
+            { q: "The storage of energy in the high-energy bonds of the phosphate groups is released when $\\text{ATP}$ is split to form what?", a: "ADP and a free phosphate group", choices: ["$\text{AMP}$ and two phosphate groups", "Glucose and oxygen", "ADP and a free phosphate group", "Water and carbon dioxide"], correct: "ADP and a free phosphate group" },
+            { q: "What term describes molecules formed by two oxygen atoms, like $\\text{O}_2$?", a: "Molecule", choices: ["Compound", "Atom", "Ion", "Molecule"], correct: "Molecule" },
+            { q: "Carbon dioxide ($\text{CO}_2$) is a compound that consists of one carbon atom and two oxygen atoms. It is primarily considered what kind of waste product?", a: "Metabolic waste product", choices: ["Chemical catalyst", "Enzyme", "Metabolic waste product", "Solvent"], correct: "Metabolic waste product" },
+            { q: "Chemical reactions are defined as the interaction of atoms of molecules or compounds to form:", a: "New chemical compounds", choices: ["Ions", "Energy", "New chemical compounds", "Chromatin"], correct: "New chemical compounds" },
+            { q: "Chemical substances that speed up the rate of a chemical reaction without being consumed are called:", a: "Catalysts", choices: ["Enzymes", "Compounds", "Solutions", "Catalysts"], correct: "Catalysts" },
+            { q: "What happens to electrolytes when they break apart in a solution?", a: "They dissociate or ionize", choices: ["They form a precipitate", "They dissociate or ionize", "They become neutral molecules", "They form a suspension"], correct: "They dissociate or ionize" },
+            { q: "The process of a substance dissolving in water and acquiring an electrical charge is known as:", a: "Ionization", choices: ["Osmosis", "Filtration", "Ionization", "Catabolism"], correct: "Ionization" },
+            { q: "What is the charge of an Anion?", a: "Negatively charged", choices: ["Positively charged", "Neutral", "Unstable", "Negatively charged"], correct: "Negatively charged" },
+            { q: "Which cation is important in nerve transmission and muscle contraction?", a: "Calcium ($\text{Ca}^{2+}$)", choices: ["Sodium ($\text{Na}^+$)", "Potassium ($\text{K}^+$)", "Calcium ($\text{Ca}^{2+}$)", "Ammonium ($\text{NH}_4^+$)"], correct: "Calcium ($\text{Ca}^{2+}$)" },
+            { q: "Ions are atoms or groups of atoms that carry an electrical charge because they have:", a: "Gained or lost electrons", choices: ["Gained or lost protons", "Changed their atomic number", "Gained or lost neutrons", "Gained or lost electrons"], correct: "Gained or lost electrons" },
+            { q: "The term for when a cell swells and bursts due to being placed in a hypotonic solution is:", a: "Lysis (or hemolysis for $\\text{RBC}$)", choices: ["Crenation", "Equilibrium", "Lysis (or hemolysis for $\\text{RBC}$)", "Phagocytosis"], correct: "Lysis (or hemolysis for $\\text{RBC}$)" },
+            { q: "The process of a red blood cell shrinking due to being placed in a hypertonic solution is called:", a: "Crenation", choices: ["Lysis", "Filtration", "Crenation", "Exocytosis"], correct: "Crenation" },
+            { q: "Micromovements of substances across the cell's surface are often facilitated by which hairlike projections?", a: "Microvilli and Cilia", choices: ["Flagella and Centrioles", "Mitochondria and Lysosomes", "Microvilli and Cilia", "RER and SER"], correct: "Microvilli and Cilia" },
+            { q: "What is the primary goal of Cell Differentiation?", a: "To allow cells to vary in size, shape, and function based on their specialization", choices: ["To increase the rate of mitosis", "To produce stem cells", "To allow cells to vary in size, shape, and function based on their specialization", "To control blood $\\text{pH}$"], correct: "To allow cells to vary in size, shape, and function based on their specialization" },
+
+            // --- Filling the remaining 64 questions with variations and deeper concepts ---
+            // 23 more general questions from the first set
+            { q: "What is the definition of a molecule?", a: "Two or more atoms bonded together", choices: ["A single atom with a charge", "Two or more atoms bonded together", "The smallest part of an element", "A proton and a neutron"], correct: "Two or more atoms bonded together" },
+            { q: "Which of the six forms of energy is shown in the movement of a jogger's legs?", a: "Mechanical energy", choices: ["Radiant energy", "Chemical energy", "Mechanical energy", "Nuclear energy"], correct: "Mechanical energy" },
+            { q: "Radiant energy is defined as the energy used for:", a: "Vision (light)", choices: ["Heat transmission", "Nerve transmission", "Vision (light)", "Muscle contraction"], correct: "Vision (light)" },
+            { q: "Heat energy is used to regulate:", a: "Body temperature", choices: ["Nerve impulses", "Chemical bonds", "Body temperature", "Muscle movement"], correct: "Body temperature" },
+            { q: "Nuclear energy is usually considered to be:", a: "Not used physiologically", choices: ["The main source of $\\text{ATP}$", "The primary source of heat in the body", "Used in nerve transmission", "Not used physiologically"], correct: "Not used physiologically" },
+            { q: "The transfer of energy from food to cells, ready for biological work, is an example of energy being:", a: "Easily converted from one form to another", choices: ["Destroyed during use", "Difficult to transfer", "Easily converted from one form to another", "Created from nothing"], correct: "Easily converted from one form to another" },
+            { q: "Which component of ATP is unique to the molecule and contains nitrogen?", a: "Base (Adenine)", choices: ["Phosphate group", "Sugar (Ribose)", "Base (Adenine)", "Water"], correct: "Base (Adenine)" },
+            { q: "In the context of the $\\text{pH}$ scale, a solution that has more hydrogen ions is:", a: "Acidic", choices: ["Basic", "Neutral", "Acidic", "Isotonic"], correct: "Acidic" },
+            { q: "In the context of the $\\text{pH}$ scale, a solution that has fewer hydrogen ions is:", a: "Basic (Alkaline)", choices: ["Acidic", "Neutral", "Basic (Alkaline)", "Hypertonic"], correct: "Basic (Alkaline)" },
+            { q: "Blood $\\text{pH}$ that is slightly acidic (e.g., $\\text{pH}$ 7.2) is considered:", a: "Acidosis", choices: ["Alkalosis", "Normal range", "Catabolism", "Acidosis"], correct: "Acidosis" },
+            { q: "If blood $\\text{pH}$ is 7.55, this is considered:", a: "Alkalosis", choices: ["Acidosis", "Hypotonic", "Alkalosis", "Isotonic"], correct: "Alkalosis" },
+            { q: "What function of water allows joints to move freely?", a: "Ideal lubricant", choices: ["Temperature regulator", "Chemical reactant", "Ideal lubricant", "Universal solvent"], correct: "Ideal lubricant" },
+            { q: "Water is a crucial part of which chemical reaction, essential for digestion?", a: "Chemical reactant (Hydrolysis)", choices: ["Chemical catalyst", "Synthesis reaction", "Chemical reactant (Hydrolysis)", "Oxidation"], correct: "Chemical reactant (Hydrolysis)" },
+            { q: "The cell membrane is selectively semipermeable, meaning only some substances can:", a: "Cross the membrane", choices: ["Be destroyed by lysosomes", "Be produced by ribosomes", "Cross the membrane", "Undergo mitosis"], correct: "Cross the membrane" },
+            { q: "What is the primary function of the Nucleolus, found within the nucleus?", a: "Synthesis of ribosomes", choices: ["Production of ATP", "Synthesis of ribosomes", "Lipid synthesis", "Controlling $\\text{pH}$"], correct: "Synthesis of ribosomes" },
+            { q: "The cell component described as a jelly-like substance surrounding the organelles is the:", a: "Cytosol", choices: ["Nucleoplasm", "Mitochondria", "Cytosol", "Extracellular fluid"], correct: "Cytosol" },
+            { q: "When oxygen is present, the mitochondria can generate energy through a process called:", a: "Cellular respiration", choices: ["Passive transport", "Fermentation", "Cellular respiration", "Filtration"], correct: "Cellular respiration" },
+            { q: "Ribosomes that are fixed and free are involved in:", a: "Protein synthesis", choices: ["$\text{ATP}$ transfer", "Ionization", "Protein synthesis", "Osmosis"], correct: "Protein synthesis" },
+            { q: "Which part of the $\\text{RER}$ is fixed to the membrane and responsible for its 'rough' appearance?", a: "Ribosomes", choices: ["Lipids", "Cytosol", "Ribosomes", "Microvilli"], correct: "Ribosomes" },
+            { q: "Which cytoskeletal elements are rod-shaped structures that help separate chromosomes during mitosis?", a: "Centrioles", choices: ["Microfilaments", "Microtubules", "Centrioles", "Cilia"], correct: "Centrioles" },
+            { q: "The movement of substances across the cell membrane without the cell expending its own energy is called:", a: "Passive transport", choices: ["Active transport", "Endocytosis", "Passive transport", "Exocytosis"], correct: "Passive transport" },
+            { q: "Diffusion ceases when the concentration of the substance reaches:", a: "Equilibrium", choices: ["Supersaturation", "Hypertonicity", "Isotonicity", "Equilibrium"], correct: "Equilibrium" },
+            { q: "In the second gap phase ($G_2$) of the cell cycle, the cell performs:", a: "Synthesis of enzymes and other substances needed for division", choices: ["$\text{DNA}$ duplication", "Mitotic division", "Synthesis of enzymes and other substances needed for division", "$\text{ATP}$ storage"], correct: "Synthesis of enzymes and other substances needed for division" },
+
+            // 55 More Questions (Reinforcing concepts)
+            { q: "An unstable atom will attempt to gain stability by engaging in:", a: "Chemical bonding", choices: ["Cell division", "Passive transport", "Chemical bonding", "Acid-base regulation"], correct: "Chemical bonding" },
+            { q: "The sodium ion ($\text{Na}^+$) is clinically important in the body's:", a: "Fluid balance", choices: ["Muscle contraction", "Acid-base balance", "Fluid balance", "Energy transfer"], correct: "Fluid balance" },
+            { q: "The Potassium ion ($\text{K}^+$) is clinically important in the electrical activity of:", a: "Nerves and muscles", choices: ["Red blood cells", "Bone formation", "Nerves and muscles", "Protein synthesis"], correct: "Nerves and muscles" },
+            { q: "The calcium ion ($\text{Ca}^{2+}$) is necessary for which two key biological functions?", a: "Bone and teeth formation and muscle contraction", choices: ["$\text{pH}$ regulation and fluid balance", "Energy transfer and nerve transmission", "Bone and teeth formation and muscle contraction", "Protein synthesis and waste disposal"], correct: "Bone and teeth formation and muscle contraction" },
+            { q: "A $\\text{Cation}$ is an ion with a:", a: "Positive charge", choices: ["Negative charge", "Neutral charge", "Variable charge", "Positive charge"], correct: "Positive charge" },
+            { q: "An $\\text{Anion}$ is an ion with a:", a: "Negative charge", choices: ["Positive charge", "Neutral charge", "Variable charge", "Negative charge"], correct: "Negative charge" },
+            { q: "What is the primary product released during the catabolism of food after it is broken down in digestion?", a: "Energy", choices: ["Water", "Electrolytes", "Energy", "Ribosomes"], correct: "Energy" },
+            { q: "The energy released from $\\text{ATP}$ is transferred to cells to perform:", a: "Biological work", choices: ["Chemical bonding", "Cell division", "Biological work", "Osmosis"], correct: "Biological work" },
+            { q: "Which part of the $\\text{ATP}$ molecule is a sugar?", a: "Ribose", choices: ["Adenine", "Phosphate", "Ribose", "Glucose"], correct: "Ribose" },
+            { q: "The base and sugar of $\\text{ATP}$ remain after the phosphate groups are broken off. What is the name of this resulting molecule?", a: "ADP (Adenosine diphosphate)", choices: ["AMP (Adenosine monophosphate)", "ADP (Adenosine diphosphate)", "GTP (Guanosine triphosphate)", "$\text{RNA}$ (Ribonucleic acid)"], correct: "ADP (Adenosine diphosphate)" },
+            { q: "What is the function of enzymes?", a: "Proteins that serve as catalysts", choices: ["Chemicals that slow down reactions", "Proteins that serve as catalysts", "Substances that are consumed in a reaction", "Energy storage molecules"], correct: "Proteins that serve as catalysts" },
+            { q: "Which acid, discussed in the $\\text{pH}$ content, is a common inorganic acid?", a: "Hydrochloric acid ($\text{HCl}$)", choices: ["Carbonic acid", "Lactic acid", "Hydrochloric acid ($\text{HCl}$)", "Acetic acid"], correct: "Hydrochloric acid ($\text{HCl}$)" },
+            { q: "If a solution is more acidic, it has a higher concentration of:", a: "Hydrogen ions ($\text{H}^+$)", choices: ["Hydroxide ions ($\text{OH}^-$)", "Sodium ions", "Hydrogen ions ($\text{H}^+$)", "Neutral atoms"], correct: "Hydrogen ions ($\text{H}^+$)" },
+            { q: "The term used to describe an uneven electrical charge in a molecule, leading to attractions like the hydrogen bond, is:", a: "Polarity", choices: ["Neutrality", "Covalency", "Polarity", "Isotonicity"], correct: "Polarity" },
+            { q: "In a $\\text{Hydrogen}$ bond, the atoms share electrons:", a: "Unequally", choices: ["Equally", "Unequally", "Not at all", "Only in the first shell"], correct: "Unequally" },
+            { q: "How many electrons are in the outermost shell of an atom that is chemically stable?", a: "8 (or 2 for Hydrogen/Helium)", choices: ["4", "10", "8 (or 2 for Hydrogen/Helium)", "1"], correct: "8 (or 2 for Hydrogen/Helium)" },
+            { q: "The second type of solution, where the solvent is alcohol, is called a:", a: "Tincture", choices: ["Suspension", "Mixture", "Tincture", "Aqueous solution"], correct: "Tincture" },
+            { q: "A solute is defined as the substance present in a solution in:", a: "Smaller amount", choices: ["Greater amount", "Smaller amount", "Equal amount to the solvent", "Solid state only"], correct: "Smaller amount" },
+            { q: "The plasma in blood is an example of what type of mixture?", a: "Colloidal suspension", choices: ["Simple solution", "Suspension", "Precipitate", "Colloidal suspension"], correct: "Colloidal suspension" },
+            { q: "Why must suspensions be shaken before administration, such as an antacid?", a: "The large particles settle out at the bottom", choices: ["The particles can chemically react", "The large particles settle out at the bottom", "To prevent $\\text{ATP}$ from breaking down", "To increase ionization"], correct: "The large particles settle out at the bottom" },
+            { q: "The problem of having too few $\\text{H}^+$ ions in the blood is known as:", a: "Alkalosis", choices: ["Acidosis", "Neutrality", "Alkalosis", "Hypotonicity"], correct: "Alkalosis" },
+            { q: "The problem of having too many $\\text{H}^+$ ions in the blood is known as:", a: "Acidosis", choices: ["Alkalosis", "Neutrality", "Acidosis", "Hypertonicity"], correct: "Acidosis" },
+            { q: "What is the primary role of the $\\text{Phosphate}$ anion in the body?", a: "Component of bones and teeth; energy transfer in $\\text{ATP}$", choices: ["Fluid balance; $\\text{pH}$ regulation", "Component of bones and teeth; energy transfer in $\\text{ATP}$", "Muscle contraction; nerve transmission", "Universal solvent; cushioning"], correct: "Component of bones and teeth; energy transfer in $\\text{ATP}$" },
+            { q: "Which part of the cell is surrounded by a double-layered nuclear membrane?", a: "Nucleus", choices: ["Mitochondria", "Cytoplasm", "Nucleus", "Ribosome"], correct: "Nucleus" },
+            { q: "The internal fluid of the nucleus is called:", a: "Nucleoplasm", choices: ["Cytosol", "Chromatin", "Nucleoplasm", "Matrix"], correct: "Nucleoplasm" },
+            { q: "The smooth outer layer and folds (cristae) in the inner layer are structural components of the:", a: "Mitochondria", choices: ["Golgi apparatus", "Lysosome", "Mitochondria", "Nucleus"], correct: "Mitochondria" },
+            { q: "What is the site of $\\text{lipid}$ and $\\text{steroid}$ synthesis?", a: "Smooth Endoplasmic Reticulum ($\text{SER}$)", choices: ["Rough Endoplasmic Reticulum ($\text{RER}$)", "Golgi apparatus", "Smooth Endoplasmic Reticulum ($\text{SER}$)", "Nucleus"], correct: "Smooth Endoplasmic Reticulum ($\text{SER}$)" },
+            { q: "Golgi apparatus packages protein in:", a: "Golgi membrane", choices: ["Cell membrane", "Lysosomes", "Golgi membrane", "Nuclear envelope"], correct: "Golgi membrane" },
+            { q: "The powerful digestive enzymes used by lysosomes conduct:", a: "Phagocytosis", choices: ["$\text{ATP}$ synthesis", "Endocytosis", "Phagocytosis", "Exocytosis"], correct: "Phagocytosis" },
+            { q: "Microfilaments and microtubules provide for the cell's:", a: "Intracellular shape and support", choices: ["Cell membrane flexibility", "$\text{DNA}$ replication", "Intracellular shape and support", "Energy production"], correct: "Intracellular shape and support" },
+            { q: "Microvilli help move water across the:", a: "Cell membrane", choices: ["Nuclear envelope", "Mitochondrial membrane", "Cell membrane", "$\text{RER}$"], correct: "Cell membrane" },
+            { q: "The 'ball being pushed uphill' illustrates the need for $\\text{ATP}$ in which process?", a: "Active transport", choices: ["Passive transport", "Osmosis", "Diffusion", "Active transport"], correct: "Active transport" },
+            { q: "Pinocytosis (cell drinking) is a form of:", a: "Endocytosis", choices: ["Exocytosis", "Passive transport", "Pinocytosis", "Filtration"], correct: "Endocytosis" },
+            { q: "What is the correct order of the phases of Mitosis ($\text{M}$ Phase)?", a: "Prophase $\\rightarrow$ Metaphase $\\rightarrow$ Anaphase $\\rightarrow$ Telophase", choices: ["Interphase $\\rightarrow$ Prophase $\\rightarrow$ Metaphase $\\rightarrow$ Telophase", "Anaphase $\\rightarrow$ Metaphase $\\rightarrow$ Prophase $\\rightarrow$ Telophase", "Prophase $\\rightarrow$ Metaphase $\\rightarrow$ Anaphase $\\rightarrow$ Telophase", "Telophase $\\rightarrow$ Anaphase $\\rightarrow$ Metaphase $\\rightarrow$ Prophase"], correct: "Prophase $\\rightarrow$ Metaphase $\\rightarrow$ Anaphase $\\rightarrow$ Telophase" },
+            { q: "Which cells, such as nerve cells, lose the ability to reproduce after their limited life span?", a: "Permanent cells", choices: ["Labile cells", "Stem cells", "Permanent cells", "Cancer cells"], correct: "Permanent cells" },
+            { q: "What is a $\\text{Pap smear}$ used to detect?", a: "Cellular changes related to cancer", choices: ["$\text{ATP}$ deficiency", "Alkalosis", "Cellular changes related to cancer", "Water imbalance"], correct: "Cellular changes related to cancer" },
+            { q: "Most cell growth is orderly and controlled, but disruptions can lead to:", a: "Tumors (cancer)", choices: ["Increased $\\text{ATP}$", "Hypertonicity", "Tumors (cancer)", "Faster cell cycle"], correct: "Tumors (cancer)" },
+            { q: "A drug that crystallizes in the kidney, forming a precipitate, can lead to what complication?", a: "Kidney stone (calculus)", choices: ["Increase in $\\text{pH}$", "Cell lysis", "Kidney stone (calculus)", "Protein synthesis"], correct: "Kidney stone (calculus)" },
+            { q: "The $\\text{Phosphate}$ anion is essential for what process in the body?", a: "Energy transfer and bone structure", choices: ["Fluid balance and nerve impulses", "Muscle contraction and oxygen transport", "Energy transfer and bone structure", "$\text{pH}$ regulation and $\\text{CO}_2$ transport"], correct: "Energy transfer and bone structure" },
+            { q: "An electron shell is a region that holds electrons that surround the:", a: "Nucleus in orbits", choices: ["Cytosol", "Cell membrane", "Nucleus in orbits", "Endoplasmic Reticulum"], correct: "Nucleus in orbits" },
+            { q: "What does an atom gain or lose to become a Cation?", a: "Electrons (lost)", choices: ["Electrons (gained)", "Electrons (lost)", "Protons (gained)", "Neutrons (lost)"], correct: "Electrons (lost)" },
+            { q: "What does an atom gain or lose to become an Anion?", a: "Electrons (gained)", choices: ["Electrons (lost)", "Electrons (gained)", "Protons (lost)", "Neutrons (gained)"], correct: "Electrons (gained)" },
+            { q: "Which cation is important for $\\text{pH}$ regulation because its concentration determines the $\\text{pH}$ of the solution?", a: "Hydrogen ($\text{H}^+$)", choices: ["Sodium ($\text{Na}^+$)", "Potassium ($\text{K}^+$)", "Iron ($\text{Fe}^{2+}$)", "Hydrogen ($\text{H}^+$)"], correct: "Hydrogen ($\text{H}^+$)" },
+            { q: "Which type of bond is formed when atoms like sodium and chloride completely transfer electrons to achieve stability?", a: "Ionic bond", choices: ["Covalent bond", "Hydrogen bond", "Metallic bond", "Ionic bond"], correct: "Ionic bond" },
+            { q: "A $\\text{Compound}$ must contain atoms of:", a: "Two or more different elements", choices: ["The same element only", "Two or more different elements", "Only one atom type", "Only metals"], correct: "Two or more different elements" },
+            { q: "Water is called $\\text{a}$ 'Universal Solvent' because it dissolves what type of molecules well?", a: "Polar substances", choices: ["Only non-polar substances", "Only metal ions", "Polar substances", "All substances equally"], correct: "Polar substances" },
+            { q: "The cushioning function of water is crucial for which systems/structures?", a: "Brain, spinal cord, and developing fetus", choices: ["Muscles, bones, and skin", "Mitochondria, nucleus, and $\\text{ATP}$", "Brain, spinal cord, and developing fetus", "Digestive system and heart"], correct: "Brain, spinal cord, and developing fetus" },
+            { q: "The process of a solid forming and falling out of a solution, which can become an embolus in the body, is called:", a: "Precipitation", choices: ["Suspension", "Colloidal formation", "Precipitation", "Tincture formation"], correct: "Precipitation" },
+            { q: "What is the smallest part of a compound that retains the properties of that compound?", a: "Molecule", choices: ["Atom", "Element", "Molecule", "Ion"], correct: "Molecule" },
+            { q: "Which enzyme is directly involved in $\\text{DNA}$ replication during the $\\text{S}$ phase of the cell cycle?", a: "$\text{DNA}$ Polymerase (Implied)", choices: ["Catalase", "Amylase", "$\text{DNA}$ Polymerase (Implied)", "Lipase"], correct: "$\text{DNA}$ Polymerase (Implied)" },
+            { q: "The mitotic phase where the nuclear envelope breaks down and chromatin condenses into chromosomes is:", a: "Prophase", choices: ["Metaphase", "Anaphase", "Prophase", "Telophase"], correct: "Prophase" },
+            { q: "The mitotic phase where the chromosomes are pulled apart to opposite ends of the cell is:", a: "Anaphase", choices: ["Prophase", "Metaphase", "Anaphase", "Telophase"], correct: "Anaphase" },
+            { q: "What is the fate of malignant cells?", a: "They invade surrounding tissue and potentially metastasize", choices: ["They die immediately by $\\text{Apoptosis}$", "They invade surrounding tissue and potentially metastasize", "They remain localized and harmless", "They immediately become stem cells"], correct: "They invade surrounding tissue and potentially metastasize" },
+            { q: "What is the term for cell or groups of cells dying due to deprivation of oxygen or exposure to toxins?", a: "Necrosis", choices: ["Apoptosis", "Differentiation", "Mitosis", "Necrosis"], correct: "Necrosis" },
+            { q: "What is the key clinical relevance of the $\\text{Bicarbonate}$ anion ($\text{HCO}_3^-$)?", a: "Important in acid-base regulation (buffer)", choices: ["Energy transfer", "Muscle contraction", "Fluid balance", "Important in acid-base regulation (buffer)"], correct: "Important in acid-base regulation (buffer)" },
+            { q: "If a tissue is deprived of oxygen for too long, what type of cell death is likely to occur?", a: "Necrosis", choices: ["Apoptosis", "Metastasis", "Necrosis", "Benign growth"], correct: "Necrosis" },
+            { q: "Which part of the $\\text{ATP}$ molecule is a nitrogen-containing base?", a: "Adenine", choices: ["Ribose", "Phosphate", "Adenine", "Guanine"], correct: "Adenine" },
+            { q: "The energy stored in $\\text{ATP}$ can be used to perform mechanical work and what other kind of work?", a: "Biological (e.g., nerve transmission, active transport)", choices: ["Chemical bonding", "Radiant energy", "Biological (e.g., nerve transmission, active transport)", "Nuclear energy"], correct: "Biological (e.g., nerve transmission, active transport)" },
+            { q: "When $\\text{CO}_2$ is dissolved in water, it forms a weak acid called $\\text{Carbonic acid}$. This is an example of water acting as a:", a: "Chemical reactant", choices: ["Universal solvent", "Ideal lubricant", "Chemical reactant", "Cushioning fluid"], correct: "Chemical reactant" },
+            { q: "In passive transport, the driving force for movement is the difference in concentration, known as the:", a: "Concentration gradient", choices: ["$\text{pH}$ scale", "Electrical potential", "Concentration gradient", "Osmotic pressure"], correct: "Concentration gradient" },
+            { q: "Facilitated diffusion is considered passive transport because it does not require:", a: "$\text{ATP}$ energy", choices: ["A helper molecule", "A concentration gradient", "A cell membrane", "$\text{ATP}$ energy"], correct: "$\text{ATP}$ energy" },
+            { q: "Which type of cell division is generally not a reproductive mechanism for a multicellular organism, but is essential for growth?", a: "Mitosis", choices: ["Meiosis", "Apoptosis", "Mitosis", "Exocytosis"], correct: "Mitosis" },
+            { q: "If you have a solution of salt and water, and the salt is in the smaller amount, the salt is the:", a: "Solute", choices: ["Solvent", "Mixture", "Precipitate", "Solute"], correct: "Solute" },
+            { q: "The $\\text{Chloride}$ anion ($\text{Cl}^-$) primarily plays a role in what bodily function?", a: "Fluid balance", choices: ["$\text{ATP}$ production", "Bone formation", "Fluid balance", "Muscle contraction"], correct: "Fluid balance" },
+            { q: "What is the location of the fixed ribosomes that form the $\\text{RER}$?", a: "Cytoplasmic face of the $\\text{ER}$ membrane", choices: ["Inside the nucleus", "Inner mitochondrial membrane", "Cytoplasmic face of the $\\text{ER}$ membrane", "Freely in the cytosol"], correct: "Cytoplasmic face of the $\\text{ER}$ membrane" },
+            { q: "What is the primary substance regulated by the cell membrane?", a: "What enters and leaves the cell", choices: ["Cell $\\text{pH}$", "The rate of $\\text{ATP}$ production", "What enters and leaves the cell", "The size of the nucleus"], correct: "What enters and leaves the cell" },
+            { q: "Which type of ion is formed when an atom loses an electron?", a: "Cation", choices: ["Anion", "Molecule", "Cation", "Neutral atom"], correct: "Cation" },
+            { q: "A tissue that is undergoing significant wear and tear, like the skin, relies on which process for renewal?", a: "Mitosis", choices: ["Necrosis", "Apoptosis", "Mitosis", "Differentiation"], correct: "Mitosis" },
+            { q: "Which type of cell division results in daughter cells that are genetically identical to the parent cell?", a: "Mitosis", choices: ["Meiosis", "Apoptosis", "Necrosis", "Mitosis"], correct: "Mitosis" },
+            { q: "In the context of solutions, what determines the direction of water movement during $\\text{Osmosis}$?", a: "The concentration of solute (e.g., salt) in the solution", choices: ["The concentration of $\\text{ATP}$", "The concentration of oxygen", "The concentration of solute (e.g., salt) in the solution", "The cell's $\\text{pH}$ level"], correct: "The concentration of solute (e.g., salt) in the solution" },
+            { q: "Which type of transport is represented by $\\text{Exocytosis}$ and $\\text{Endocytosis}$?", a: "Active transport", choices: ["Passive transport", "Simple diffusion", "Facilitated diffusion", "Active transport"], correct: "Active transport" },
+            { q: "The two types of solutions discussed in the slides are Aqueous solutions and:", a: "Tinctures", choices: ["Mixtures", "Suspensions", "Tinctures", "Buffers"], correct: "Tinctures" },
+            { q: "What is a key feature of a $\\text{Hydrogen}$ bond?", a: "It is a weak intermolecular attraction", choices: ["It is the strongest chemical bond", "It requires $\\text{ATP}$ to form", "It is a weak intermolecular attraction", "It always involves sodium and chlorine"], correct: "It is a weak intermolecular attraction" },
+            { q: "In what part of the cell is $\\text{Chromatin}$ found?", a: "Nucleus", choices: ["Cytosol", "Mitochondria", "Nucleus", "Ribosome"], correct: "Nucleus" },
+            { q: "Which organelle is a network of membranes in the cytosol?", a: "Endoplasmic Reticulum ($\text{ER}$)", choices: ["Golgi apparatus", "Lysosome", "Endoplasmic Reticulum ($\text{ER}$)", "Centriole"], correct: "Endoplasmic Reticulum ($\text{ER}$)" },
+            { q: "What is the main difference between an $\\text{Aqueous}$ solution and a $\\text{Tincture}$?", a: "The type of solvent used ($\text{Water}$ vs. $\\text{Alcohol}$)", choices: ["The amount of $\\text{ATP}$ produced", "The $\\text{pH}$ level", "The type of solvent used ($\text{Water}$ vs. $\\text{Alcohol}$)", "The charge of the ions"], correct: "The type of solvent used ($\text{Water}$ vs. $\\text{Alcohol}$)" },
+            { q: "What is the typical fate of stem cells in adults?", a: "They may remain inactive for years", choices: ["They divide rapidly constantly", "They are only found in the embryo", "They may remain inactive for years", "They immediately become cancer cells"], correct: "They may remain inactive for years" },
+            { q: "A $\\text{Benign}$ tumor is characterized by:", a: "Abnormal cell growth that creates tumors that are noncancerous", choices: ["Rapid metastasis", "Cell death by $\\text{Necrosis}$", "Abnormal cell growth that creates tumors that are noncancerous", "$\text{DNA}$ duplication failure"], correct: "Abnormal cell growth that creates tumors that are noncancerous" },
+            { q: "Which phase of $\\text{Mitosis}$ is essentially the reverse of $\\text{Prophase}$?", a: "Telophase", choices: ["Anaphase", "Metaphase", "Telophase", "Interphase"], correct: "Telophase" },
+            { q: "If an atom has 11 protons and 10 electrons, it is a:", a: "Cation", choices: ["Anion", "Neutral atom", "Cation", "Isotope"], correct: "Cation" },
+            { q: "If a fluid is outside the cell, it is defined as:", a: "Extracellular fluid", choices: ["Intracellular fluid", "Cytosol", "Extracellular fluid", "Nucleoplasm"], correct: "Extracellular fluid" },
+            { q: "The movement of water and dissolved substances being 'pushed' from higher pressure to lower pressure is a characteristic of:", a: "Filtration", choices: ["Osmosis", "Diffusion", "Active transport", "Filtration"], correct: "Filtration" },
+            { q: "What are the three main parts of an $\\text{ATP}$ molecule?", a: "Base, sugar, and three phosphate groups", choices: ["Nucleus, $\\text{RER}$, and $\\text{SER}$", "Water, electrolytes, and nutrients", "Base, sugar, and three phosphate groups", "$\text{H}^+$, $\text{OH}^-$, and $\text{Na}^+$"], correct: "Base, sugar, and three phosphate groups" },
+            { q: "Which type of transport includes $\\text{Phagocytosis}$ and $\\text{Pinocytosis}$?", a: "Endocytosis", choices: ["Exocytosis", "Filtration", "Endocytosis", "Diffusion"], correct: "Endocytosis" },
+            { q: "The use of food as fuel is an example of what kind of energy?", a: "Chemical energy", choices: ["Mechanical energy", "Radiant energy", "Chemical energy", "Electrical energy"], correct: "Chemical energy" },
+            { q: "The $\\text{pH}$ value of 7.35 is described as:", a: "Slightly acidic (low end of normal)", choices: ["Very basic", "Perfectly neutral", "Slightly acidic (low end of normal)", "Severely acidic"], correct: "Slightly acidic (low end of normal)" },
+            { q: "Which part of the $\\text{ATP}$ molecule is a $\\text{Base}$?", a: "Adenine", choices: ["Phosphate", "Sugar", "Adenine", "Guanine"], correct: "Adenine" },
+            { q: "The function of Cilia, which are short hairlike projections, is to:", a: "Help move water across the cell membrane", choices: ["Swim", "Provide structural support", "Help move water across the cell membrane", "Produce $\\text{ATP}$"], correct: "Help move water across the cell membrane" },
+            { q: "Flagella, which are whiplike and longer, primarily enable the cell to:", a: "Swim", choices: ["Move water across the surface", "Provide internal support", "Swim", "Filter substances"], correct: "Swim" },
+            { q: "The nucleus is surrounded by a double-layered membrane called the:", a: "Nuclear envelope", choices: ["Cell membrane", "$\text{ER}$ membrane", "Nuclear envelope", "Mitochondrial membrane"], correct: "Nuclear envelope" },
+            { q: "What is the cell's main mechanism for secreting cellular products out of the cell?", a: "Exocytosis", choices: ["Endocytosis", "Filtration", "Exocytosis", "Diffusion"], correct: "Exocytosis" },
+            { q: "A concentrated $\\text{Acid}$ will have a $\\text{pH}$ value closest to:", a: "0", choices: ["7", "14", "10", "0"], correct: "0" },
+            { q: "A concentrated $\\text{Base}$ (Alkaline) will have a $\\text{pH}$ value closest to:", a: "14", choices: ["0", "7", "10", "14"], correct: "14" },
+            { q: "Which component of the $\\text{Cytoplasm}$ is a watery, jelly-like substance?", a: "Cytosol", choices: ["Organelles", "Nucleoplasm", "Cytosol", "Chromatin"], correct: "Cytosol" },
+            { q: "The $\\text{Rough Endoplasmic Reticulum}$ ($\text{RER}$) is primarily known for:", a: "Modifying and storing newly synthesized $\\text{Proteins}$", choices: ["$\text{Lipid}$ synthesis", "Modifying and storing newly synthesized $\\text{Proteins}$", "$\text{ATP}$ production", "Cellular waste disposal"], correct: "Modifying and storing newly synthesized $\\text{Proteins}$" },
+            { q: "$\text{Enzymes}$ are a specific type of $\\text{Catalyst}$ that are usually:", a: "Proteins", choices: ["Lipids", "Carbohydrates", "Nucleic acids", "Proteins"], correct: "Proteins" },
+            { q: "What type of bonds hold the atoms within a water molecule together?", a: "Covalent bonds", choices: ["Ionic bonds", "Hydrogen bonds", "Covalent bonds", "Metallic bonds"], correct: "Covalent bonds" },
+            { q: "What type of attraction allows separate water molecules to 'stick' to each other?", a: "Hydrogen bonds", choices: ["Covalent bonds", "Ionic bonds", "Hydrogen bonds", "Metallic bonds"], correct: "Hydrogen bonds" },
+            { q: "In a $\\text{Suspension}$, the particles are described as:", a: "Relatively large particles that settle out", choices: ["Very small and dissolved", "Relatively large particles that settle out", "Evenly dispersed and microscopic", "Able to perform $\\text{Osmosis}$"], correct: "Relatively large particles that settle out" },
+            { q: "In a $\\text{Colloidal suspension}$, the particles are described as:", a: "Remaining suspended within the fluid", choices: ["Settling out quickly", "Remaining suspended within the fluid", "Chemically reacting with the solvent", "Forming $\\text{ATP}$"], correct: "Remaining suspended within the fluid" },
+            { q: "When a weak acid, like $\\text{Carbonic acid}$, is formed, it indicates that water has acted as a:", a: "Chemical reactant", choices: ["Buffer", "Catalyst", "Chemical reactant", "Solute"], correct: "Chemical reactant" },
+            { q: "What happens to the chromosomes during $\\text{Metaphase}$ of $\\text{Mitosis}$?", a: "They line up along the cell's equator", choices: ["They condense from chromatin", "They line up along the cell's equator", "They are pulled to opposite poles", "The nuclear envelope reforms"], correct: "They line up along the cell's equator" },
+            { q: "The main source of energy that $\\text{ATP}$ transfers to the cells is derived from the breakdown of:", a: "Food (e.g., Glucose)", choices: ["Water", "$\text{DNA}$", "Food (e.g., Glucose)", "Electrolytes"], correct: "Food (e.g., Glucose)" },
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let isAnswered = false;
+
+        const startScreen = document.getElementById('start-screen');
+        const questionContainer = document.getElementById('question-container');
+        const scoreScreen = document.getElementById('score-screen');
+        const questionNumberEl = document.getElementById('question-number');
+        const questionTextEl = document.getElementById('question-text');
+        const answersListEl = document.getElementById('answers-list');
+        const feedbackEl = document.getElementById('feedback');
+        const finalScoreEl = document.getElementById('final-score');
+
+        // Function to shuffle an array (Fisher-Yates)
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Shuffle all questions once when the script loads
+        const shuffledQuizData = shuffle(quizData);
+
+        function startQuiz() {
+            startScreen.classList.add('hidden');
+            questionContainer.classList.remove('hidden');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            if (currentQuestionIndex >= shuffledQuizData.length) {
+                showScore();
+                return;
+            }
+
+            isAnswered = false;
+            feedbackEl.innerHTML = '';
+            answersListEl.innerHTML = '';
+
+            const data = shuffledQuizData[currentQuestionIndex];
+            questionNumberEl.textContent = currentQuestionIndex + 1;
+            questionTextEl.innerHTML = data.q;
+
+            // Prepare answer choices and shuffle them
+            const choices = shuffle([...data.choices]);
+
+            const letterMap = ['A', 'B', 'C', 'D'];
+
+            choices.forEach((choice, index) => {
+                const choiceEl = document.createElement('div');
+                choiceEl.className = 'answer-choice text-gray-700';
+                choiceEl.dataset.answer = choice;
+                choiceEl.dataset.letter = letterMap[index];
+                choiceEl.innerHTML = `<span class="font-bold mr-4 text-primary-green">${letterMap[index]}.</span> ${choice}`;
+                choiceEl.onclick = () => checkAnswer(choiceEl, data.correct);
+                answersListEl.appendChild(choiceEl);
+            });
+        }
+
+        function checkAnswer(selectedElement, correctAnswer) {
+            if (isAnswered) return;
+            isAnswered = true;
+
+            const selectedAnswer = selectedElement.dataset.answer;
+            const allChoices = answersListEl.querySelectorAll('.answer-choice');
+
+            // Disable all choices after selection
+            allChoices.forEach(el => el.classList.add('disabled'));
+
+            const feedbackMessage = document.createElement('div');
+            feedbackMessage.className = 'feedback-box';
+
+            if (selectedAnswer === correctAnswer) {
+                score++;
+                selectedElement.classList.add('correct');
+                feedbackMessage.classList.add('bg-green-100', 'text-primary-green');
+                feedbackMessage.innerHTML = '✅ Correct! <span class="text-sm font-normal">Great job!</span>';
+            } else {
+                selectedElement.classList.add('incorrect');
+                feedbackMessage.classList.add('bg-red-100', 'text-red-600');
+                feedbackMessage.innerHTML = `❌ Incorrect — the correct answer is <span class="font-bold">${correctAnswer}</span>.`;
+
+                // Highlight the correct answer in green
+                allChoices.forEach(el => {
+                    if (el.dataset.answer === correctAnswer) {
+                        el.classList.add('correct');
+                    }
+                });
+            }
+
+            feedbackEl.appendChild(feedbackMessage);
+
+            // Set a small delay before moving to the next question
+            setTimeout(() => {
+                currentQuestionIndex++;
+                loadQuestion();
+            }, 2500); // 2.5 seconds to read feedback
+        }
+
+        function showScore() {
+            questionContainer.classList.add('hidden');
+            scoreScreen.classList.remove('hidden');
+            finalScoreEl.textContent = score;
+        }
+
+    </script>
+</body>
+</html>
